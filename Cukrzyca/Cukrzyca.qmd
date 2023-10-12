@@ -1,0 +1,92 @@
+---
+title: "Cukrzyca"
+author: "Szymon Olędzki, Igor Nowiński"
+language: 'polski.yml'
+format: html
+editor: visual
+echo: true
+warning: false
+self-contained: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Informacje ogólne
+
+Dane pochodzą ze zbioru:
+
+<https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset?select=diabetes_012_health_indicators_BRFSS2015.csv>
+
+(opis)
+
+## Czym jest cukrzyca?
+
+**Cukrzyca** to cywilizacyjna choroba metaboliczna, charakteryzująca się podwyższonym stężeniem cukru we krwi. Cukrzyca związana jest z nieprawidłowym wydzielaniem i/lub działaniem insuliny w organizmie.
+
+Rodzaje cukrzycy: 
+
+-   Cukrzyca typu 1 -- charakteryzuje się niedoborem insuliny. Diabetyk wymaga leczenia insuliną. 
+
+-   Cukrzyca typu 2 -- typowe dla niej jest zaburzone działanie i/lub wydzielanie insuliny. Osoba chora musi stosować odpowiednią dietę i przyjmować lekarstwa 
+
+-   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzenia dziecka podwyższony poziom glukozy wraca do normy.
+
+## Opis zmiennych
+
+**Diabetes_binary** - zmienna jakościowa, przyjmuje wartości 0 - brak cukrzycy, 1 - stan przedcukrzycowy, 2 - chory na cukrzycę
+
+**HighBP** - zmienna jakościowa, przyjmuje wartości 0 lub 1 oznaczające czy u danego pacjenta stwierdzono podwyższone ciśnienie krwi
+
+**HighChol** - zmienna jakościowa, przyjmuje wartości 0 - u pacjenta nie stwierdzono wysokiego poziomu cholesterolu, 1 - u pacjenta stwierdzono wysoki poziom cholesterolu
+
+**CholCheck** - zmienna jakościowa, przyjmuje wartości 0 - w ciągu ostatnich 5 lat pacjent nie sprawdzał poziomu cholesterolu, 1 - w ciągu ostatnich 5 lat pacjent sprawdzał poziom cholesterolu
+
+**BMI** - zmienna ilościowa, wskaźnik masy ciała
+
+**Smoker** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie palący, 1 - pacjent jest palący (w rozumieniu, czy na przestrzeni życia wypalił przynajmniej 100 papierosów, ok. 5 paczek)
+
+**Stroke** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie doświadczył udaru mózgu, 1 - pacjent doświadczył udaru mózgu
+
+**HeartDiseaseorAttack** - zmienna jakościowa, przyjmuje wartości 0 albo 1 w zależności od tego, czy pacjent przebył w przeszłości zawał serca/choruje na niedokrwienność serca, czy jest zdrowy.
+
+**PhysActivity** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie posiada aktywności fizycznej z ostatnich 30 dni, 1 - pacjent
+
+**Fruits** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie spożywa 1 lub więcej owoców w ciągu dnia, 1 - pacjent spożywa 1 lub więcej owoców w ciągu dnia
+
+**Veggies** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie spożywa 1 lub więcej warzyw w ciągu dnia, 1 - pacjent spożywa 1 lub więcej warzyw w ciągu dnia
+
+**HvyAlcoholConsump** - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent w ciągu tygodnia wypija 14 lub więcej (w przypadku mężczyzn) albo 7 lub więcej (w przypadku kobiet) napojów alkoholowych.
+
+**AnyHealthcare** - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent posiada jakiegoś typu ubezpieczenie zdrowotne.
+
+**NoDocbcCost** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeżeli w ciągu ostatnich 12 miesięcy pacjent zrezygnował z wizyty u lekarza ze względu na jej wysoką cenę 
+
+**GenHlth** - zmienna jakościowa odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 1 (doskonały) do 5 (słaby)
+
+**MentHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie psychiczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem psychicznym (podwyższony stres, stany depresyjne/depresja, problemy związane z emocjami) 
+
+**PhysHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie fizyczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem fizycznym (schorzenia i urazy) 
+
+**DiffWalk** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeśli pacjent ma poważne problemy z chodzeniem lub wchodzeniem po schodach.
+
+**Sex** - zmienna jakościowa określająca płeć pacjenta
+
+**Age** - zmienna jakościowa określająca wiek pacjenta, przyjmuje wartości 1 do 13 (grupy wiekowe)
+
+**Education** - zmienna jakościowa określająca poziom wykształcenia pacjenta, przyjmuje wartości całkowite od 1 do 6
+
+**Income** - zmienna jakościowa opisująca zarobki pacjenta, przyjmuje wartości całkowite od 1 do 8 (przedziały zarobkowe)
+
+```{r}
+library(readr)
+library(tidyverse)
+library(gt)
+getwd()
+dane = read_csv('diabetes_split.csv')
+head(dane)
+```
+
+```{r}
+#| echo: false
+
+```
