@@ -81,12 +81,36 @@ Rodzaje cukrzycy: 
 library(readr)
 library(tidyverse)
 library(gt)
-getwd()
 dane = read_csv('diabetes_split.csv')
-head(dane)
+```
+
+```{r}
+#| warning: false
+dane <- dane %>%
+mutate(CholCheck = factor(CholCheck),
+HighBP = factor(HighBP),
+HighChol = factor(HighChol),
+Smoker = factor(Smoker),
+Stroke = factor(Stroke),
+HeartDiseaseorAttack = factor(HeartDiseaseorAttack),
+PhysActivity = factor(PhysActivity),
+Fruits = factor(Fruits),
+Veggies = factor(Veggies),
+HvyAlcoholConsump = factor(HvyAlcoholConsump),
+AnyHealthcare = factor(AnyHealthcare),
+NoDocbcCost = factor(NoDocbcCost),
+DiffWalk = factor(DiffWalk),
+Sex = factor(Sex),
+Diabetes_binary = factor(Diabetes_binary))
 ```
 
 ```{r}
 #| echo: false
+head(dane) %>%
+  gt()
+```
 
+```{r}
+dane %>%
+  ggplot(aes(Smoker, Income, group = Smoker, color = Smoker)) + geom_boxplot()
 ```

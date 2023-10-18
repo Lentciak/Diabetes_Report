@@ -3078,30 +3078,595 @@ vertical-align: -.125em;
 <p><strong>AnyHealthcare</strong> - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent posiada jakiegoś typu ubezpieczenie zdrowotne.</p>
 <p><strong>NoDocbcCost</strong> - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeżeli w ciągu ostatnich 12 miesięcy pacjent zrezygnował z wizyty u lekarza ze względu na jej wysoką cenę </p>
 <p><strong>GenHlth</strong> - zmienna jakościowa odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 1 (doskonały) do 5 (słaby)</p>
+<p><strong>MentHlth</strong> - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie psychiczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem psychicznym (podwyższony stres, stany depresyjne/depresja, problemy związane z emocjami) </p>
+<p><strong>PhysHlth</strong> - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie fizyczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem fizycznym (schorzenia i urazy) </p>
+<p><strong>DiffWalk</strong> - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeśli pacjent ma poważne problemy z chodzeniem lub wchodzeniem po schodach.</p>
+<p><strong>Sex</strong> - zmienna jakościowa określająca płeć pacjenta</p>
+<p><strong>Age</strong> - zmienna jakościowa określająca wiek pacjenta, przyjmuje wartości 1 do 13 (grupy wiekowe)</p>
+<p><strong>Education</strong> - zmienna jakościowa określająca poziom wykształcenia pacjenta, przyjmuje wartości całkowite od 1 do 6</p>
+<p><strong>Income</strong> - zmienna jakościowa opisująca zarobki pacjenta, przyjmuje wartości całkowite od 1 do 8 (przedziały zarobkowe)</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">getwd</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] &quot;/home/lent/Documents/Cukrzyca&quot;</code></pre>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>dane <span class="ot">=</span> <span class="fu">read_csv</span>(<span class="st">&#39;diabetes_split.csv&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dane <span class="ot">=</span> <span class="fu">read_csv</span>(<span class="st">&#39;diabetes_split.csv&#39;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dane)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 22
-  Diabetes_binary HighBP HighChol CholCheck   BMI Smoker Stroke
-            &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-1               0      1        0         1    26      0      0
-2               0      1        1         1    26      1      1
-3               0      0        0         1    26      0      0
-4               0      1        1         1    28      1      0
-5               0      0        0         1    29      1      0
-6               0      0        0         1    18      0      0
-# ℹ 15 more variables: HeartDiseaseorAttack &lt;dbl&gt;, PhysActivity &lt;dbl&gt;,
-#   Fruits &lt;dbl&gt;, Veggies &lt;dbl&gt;, HvyAlcoholConsump &lt;dbl&gt;, AnyHealthcare &lt;dbl&gt;,
-#   NoDocbcCost &lt;dbl&gt;, GenHlth &lt;dbl&gt;, MentHlth &lt;dbl&gt;, PhysHlth &lt;dbl&gt;,
-#   DiffWalk &lt;dbl&gt;, Sex &lt;dbl&gt;, Age &lt;dbl&gt;, Education &lt;dbl&gt;, Income &lt;dbl&gt;</code></pre>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>dane <span class="ot">&lt;-</span> dane <span class="sc">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(<span class="at">CholCheck =</span> <span class="fu">factor</span>(CholCheck),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">HighBP =</span> <span class="fu">factor</span>(HighBP),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">HighChol =</span> <span class="fu">factor</span>(HighChol),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">Smoker =</span> <span class="fu">factor</span>(Smoker),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">Stroke =</span> <span class="fu">factor</span>(Stroke),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">HeartDiseaseorAttack =</span> <span class="fu">factor</span>(HeartDiseaseorAttack),</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">PhysActivity =</span> <span class="fu">factor</span>(PhysActivity),</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">Fruits =</span> <span class="fu">factor</span>(Fruits),</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">Veggies =</span> <span class="fu">factor</span>(Veggies),</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">HvyAlcoholConsump =</span> <span class="fu">factor</span>(HvyAlcoholConsump),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">AnyHealthcare =</span> <span class="fu">factor</span>(AnyHealthcare),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">NoDocbcCost =</span> <span class="fu">factor</span>(NoDocbcCost),</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">DiffWalk =</span> <span class="fu">factor</span>(DiffWalk),</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">Sex =</span> <span class="fu">factor</span>(Sex),</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">Diabetes_binary =</span> <span class="fu">factor</span>(Diabetes_binary))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+
+<div id="zcnmcpjikf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zcnmcpjikf table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#zcnmcpjikf thead, #zcnmcpjikf tbody, #zcnmcpjikf tfoot, #zcnmcpjikf tr, #zcnmcpjikf td, #zcnmcpjikf th {
+border-style: none;
+}
+#zcnmcpjikf p {
+margin: 0;
+padding: 0;
+}
+#zcnmcpjikf .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #A8A8A8;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #A8A8A8;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#zcnmcpjikf .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#zcnmcpjikf .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#zcnmcpjikf .gt_heading {
+background-color: #FFFFFF;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_col_heading {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#zcnmcpjikf .gt_column_spanner_outer {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#zcnmcpjikf .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#zcnmcpjikf .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#zcnmcpjikf .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#zcnmcpjikf .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#zcnmcpjikf .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#zcnmcpjikf .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: middle;
+}
+#zcnmcpjikf .gt_from_md > :first-child {
+margin-top: 0;
+}
+#zcnmcpjikf .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#zcnmcpjikf .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: solid;
+border-top-width: 1px;
+border-top-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#zcnmcpjikf .gt_stub {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zcnmcpjikf .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#zcnmcpjikf .gt_row_group_first td {
+border-top-width: 2px;
+}
+#zcnmcpjikf .gt_row_group_first th {
+border-top-width: 2px;
+}
+#zcnmcpjikf .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zcnmcpjikf .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#zcnmcpjikf .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_grand_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zcnmcpjikf .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_striped {
+background-color: rgba(128, 128, 128, 0.05);
+}
+#zcnmcpjikf .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zcnmcpjikf .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#zcnmcpjikf .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#zcnmcpjikf .gt_left {
+text-align: left;
+}
+#zcnmcpjikf .gt_center {
+text-align: center;
+}
+#zcnmcpjikf .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#zcnmcpjikf .gt_font_normal {
+font-weight: normal;
+}
+#zcnmcpjikf .gt_font_bold {
+font-weight: bold;
+}
+#zcnmcpjikf .gt_font_italic {
+font-style: italic;
+}
+#zcnmcpjikf .gt_super {
+font-size: 65%;
+}
+#zcnmcpjikf .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#zcnmcpjikf .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#zcnmcpjikf .gt_indent_1 {
+text-indent: 5px;
+}
+#zcnmcpjikf .gt_indent_2 {
+text-indent: 10px;
+}
+#zcnmcpjikf .gt_indent_3 {
+text-indent: 15px;
+}
+#zcnmcpjikf .gt_indent_4 {
+text-indent: 20px;
+}
+#zcnmcpjikf .gt_indent_5 {
+text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="Diabetes_binary">Diabetes_binary</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="HighBP">HighBP</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="HighChol">HighChol</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="CholCheck">CholCheck</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BMI">BMI</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="Smoker">Smoker</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="Stroke">Stroke</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="HeartDiseaseorAttack">HeartDiseaseorAttack</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="PhysActivity">PhysActivity</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="Fruits">Fruits</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="Veggies">Veggies</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="HvyAlcoholConsump">HvyAlcoholConsump</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="AnyHealthcare">AnyHealthcare</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="NoDocbcCost">NoDocbcCost</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="GenHlth">GenHlth</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="MentHlth">MentHlth</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="PhysHlth">PhysHlth</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="DiffWalk">DiffWalk</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="Sex">Sex</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Age">Age</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Education">Education</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Income">Income</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="Diabetes_binary" class="gt_row gt_center">0</td>
+<td headers="HighBP" class="gt_row gt_center">1</td>
+<td headers="HighChol" class="gt_row gt_center">0</td>
+<td headers="CholCheck" class="gt_row gt_center">1</td>
+<td headers="BMI" class="gt_row gt_right">26</td>
+<td headers="Smoker" class="gt_row gt_center">0</td>
+<td headers="Stroke" class="gt_row gt_center">0</td>
+<td headers="HeartDiseaseorAttack" class="gt_row gt_center">0</td>
+<td headers="PhysActivity" class="gt_row gt_center">1</td>
+<td headers="Fruits" class="gt_row gt_center">0</td>
+<td headers="Veggies" class="gt_row gt_center">1</td>
+<td headers="HvyAlcoholConsump" class="gt_row gt_center">0</td>
+<td headers="AnyHealthcare" class="gt_row gt_center">1</td>
+<td headers="NoDocbcCost" class="gt_row gt_center">0</td>
+<td headers="GenHlth" class="gt_row gt_right">3</td>
+<td headers="MentHlth" class="gt_row gt_right">5</td>
+<td headers="PhysHlth" class="gt_row gt_right">30</td>
+<td headers="DiffWalk" class="gt_row gt_center">0</td>
+<td headers="Sex" class="gt_row gt_center">1</td>
+<td headers="Age" class="gt_row gt_right">4</td>
+<td headers="Education" class="gt_row gt_right">6</td>
+<td headers="Income" class="gt_row gt_right">8</td></tr>
+    <tr><td headers="Diabetes_binary" class="gt_row gt_center">0</td>
+<td headers="HighBP" class="gt_row gt_center">1</td>
+<td headers="HighChol" class="gt_row gt_center">1</td>
+<td headers="CholCheck" class="gt_row gt_center">1</td>
+<td headers="BMI" class="gt_row gt_right">26</td>
+<td headers="Smoker" class="gt_row gt_center">1</td>
+<td headers="Stroke" class="gt_row gt_center">1</td>
+<td headers="HeartDiseaseorAttack" class="gt_row gt_center">0</td>
+<td headers="PhysActivity" class="gt_row gt_center">0</td>
+<td headers="Fruits" class="gt_row gt_center">1</td>
+<td headers="Veggies" class="gt_row gt_center">0</td>
+<td headers="HvyAlcoholConsump" class="gt_row gt_center">0</td>
+<td headers="AnyHealthcare" class="gt_row gt_center">1</td>
+<td headers="NoDocbcCost" class="gt_row gt_center">0</td>
+<td headers="GenHlth" class="gt_row gt_right">3</td>
+<td headers="MentHlth" class="gt_row gt_right">0</td>
+<td headers="PhysHlth" class="gt_row gt_right">0</td>
+<td headers="DiffWalk" class="gt_row gt_center">0</td>
+<td headers="Sex" class="gt_row gt_center">1</td>
+<td headers="Age" class="gt_row gt_right">12</td>
+<td headers="Education" class="gt_row gt_right">6</td>
+<td headers="Income" class="gt_row gt_right">8</td></tr>
+    <tr><td headers="Diabetes_binary" class="gt_row gt_center">0</td>
+<td headers="HighBP" class="gt_row gt_center">0</td>
+<td headers="HighChol" class="gt_row gt_center">0</td>
+<td headers="CholCheck" class="gt_row gt_center">1</td>
+<td headers="BMI" class="gt_row gt_right">26</td>
+<td headers="Smoker" class="gt_row gt_center">0</td>
+<td headers="Stroke" class="gt_row gt_center">0</td>
+<td headers="HeartDiseaseorAttack" class="gt_row gt_center">0</td>
+<td headers="PhysActivity" class="gt_row gt_center">1</td>
+<td headers="Fruits" class="gt_row gt_center">1</td>
+<td headers="Veggies" class="gt_row gt_center">1</td>
+<td headers="HvyAlcoholConsump" class="gt_row gt_center">0</td>
+<td headers="AnyHealthcare" class="gt_row gt_center">1</td>
+<td headers="NoDocbcCost" class="gt_row gt_center">0</td>
+<td headers="GenHlth" class="gt_row gt_right">1</td>
+<td headers="MentHlth" class="gt_row gt_right">0</td>
+<td headers="PhysHlth" class="gt_row gt_right">10</td>
+<td headers="DiffWalk" class="gt_row gt_center">0</td>
+<td headers="Sex" class="gt_row gt_center">1</td>
+<td headers="Age" class="gt_row gt_right">13</td>
+<td headers="Education" class="gt_row gt_right">6</td>
+<td headers="Income" class="gt_row gt_right">8</td></tr>
+    <tr><td headers="Diabetes_binary" class="gt_row gt_center">0</td>
+<td headers="HighBP" class="gt_row gt_center">1</td>
+<td headers="HighChol" class="gt_row gt_center">1</td>
+<td headers="CholCheck" class="gt_row gt_center">1</td>
+<td headers="BMI" class="gt_row gt_right">28</td>
+<td headers="Smoker" class="gt_row gt_center">1</td>
+<td headers="Stroke" class="gt_row gt_center">0</td>
+<td headers="HeartDiseaseorAttack" class="gt_row gt_center">0</td>
+<td headers="PhysActivity" class="gt_row gt_center">1</td>
+<td headers="Fruits" class="gt_row gt_center">1</td>
+<td headers="Veggies" class="gt_row gt_center">1</td>
+<td headers="HvyAlcoholConsump" class="gt_row gt_center">0</td>
+<td headers="AnyHealthcare" class="gt_row gt_center">1</td>
+<td headers="NoDocbcCost" class="gt_row gt_center">0</td>
+<td headers="GenHlth" class="gt_row gt_right">3</td>
+<td headers="MentHlth" class="gt_row gt_right">0</td>
+<td headers="PhysHlth" class="gt_row gt_right">3</td>
+<td headers="DiffWalk" class="gt_row gt_center">0</td>
+<td headers="Sex" class="gt_row gt_center">1</td>
+<td headers="Age" class="gt_row gt_right">11</td>
+<td headers="Education" class="gt_row gt_right">6</td>
+<td headers="Income" class="gt_row gt_right">8</td></tr>
+    <tr><td headers="Diabetes_binary" class="gt_row gt_center">0</td>
+<td headers="HighBP" class="gt_row gt_center">0</td>
+<td headers="HighChol" class="gt_row gt_center">0</td>
+<td headers="CholCheck" class="gt_row gt_center">1</td>
+<td headers="BMI" class="gt_row gt_right">29</td>
+<td headers="Smoker" class="gt_row gt_center">1</td>
+<td headers="Stroke" class="gt_row gt_center">0</td>
+<td headers="HeartDiseaseorAttack" class="gt_row gt_center">0</td>
+<td headers="PhysActivity" class="gt_row gt_center">1</td>
+<td headers="Fruits" class="gt_row gt_center">1</td>
+<td headers="Veggies" class="gt_row gt_center">1</td>
+<td headers="HvyAlcoholConsump" class="gt_row gt_center">0</td>
+<td headers="AnyHealthcare" class="gt_row gt_center">1</td>
+<td headers="NoDocbcCost" class="gt_row gt_center">0</td>
+<td headers="GenHlth" class="gt_row gt_right">2</td>
+<td headers="MentHlth" class="gt_row gt_right">0</td>
+<td headers="PhysHlth" class="gt_row gt_right">0</td>
+<td headers="DiffWalk" class="gt_row gt_center">0</td>
+<td headers="Sex" class="gt_row gt_center">0</td>
+<td headers="Age" class="gt_row gt_right">8</td>
+<td headers="Education" class="gt_row gt_right">5</td>
+<td headers="Income" class="gt_row gt_right">8</td></tr>
+    <tr><td headers="Diabetes_binary" class="gt_row gt_center">0</td>
+<td headers="HighBP" class="gt_row gt_center">0</td>
+<td headers="HighChol" class="gt_row gt_center">0</td>
+<td headers="CholCheck" class="gt_row gt_center">1</td>
+<td headers="BMI" class="gt_row gt_right">18</td>
+<td headers="Smoker" class="gt_row gt_center">0</td>
+<td headers="Stroke" class="gt_row gt_center">0</td>
+<td headers="HeartDiseaseorAttack" class="gt_row gt_center">0</td>
+<td headers="PhysActivity" class="gt_row gt_center">1</td>
+<td headers="Fruits" class="gt_row gt_center">1</td>
+<td headers="Veggies" class="gt_row gt_center">1</td>
+<td headers="HvyAlcoholConsump" class="gt_row gt_center">0</td>
+<td headers="AnyHealthcare" class="gt_row gt_center">0</td>
+<td headers="NoDocbcCost" class="gt_row gt_center">0</td>
+<td headers="GenHlth" class="gt_row gt_right">2</td>
+<td headers="MentHlth" class="gt_row gt_right">7</td>
+<td headers="PhysHlth" class="gt_row gt_right">0</td>
+<td headers="DiffWalk" class="gt_row gt_center">0</td>
+<td headers="Sex" class="gt_row gt_center">0</td>
+<td headers="Age" class="gt_row gt_right">1</td>
+<td headers="Education" class="gt_row gt_right">4</td>
+<td headers="Income" class="gt_row gt_right">7</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
 </div>
 </div>
 </section>
