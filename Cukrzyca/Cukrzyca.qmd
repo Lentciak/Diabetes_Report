@@ -101,7 +101,11 @@ AnyHealthcare = factor(AnyHealthcare),
 NoDocbcCost = factor(NoDocbcCost),
 DiffWalk = factor(DiffWalk),
 Sex = factor(Sex),
-Diabetes_binary = factor(Diabetes_binary))
+Diabetes_binary = factor(Diabetes_binary),
+Age = factor(Age),
+Education = factor(Education),
+Income = factor(Income),
+GenHlth = factor(GenHlth))
 ```
 
 ```{r}
@@ -111,6 +115,34 @@ head(dane) %>%
 ```
 
 ```{r}
-dane %>%
-  ggplot(aes(Smoker, Income, group = Smoker, color = Smoker)) + geom_boxplot()
+library(knitr)
+sum(is.na(dane))
+df <- dane %>%
+  select(BMI, MentHlth)
+st_op <- apply(df,2,summary)
+st_op <- rbind(st_op, 'Std dev.' = apply(df,2,sd))
+as.data.frame(round(st_op,2)) %>%
+  kable()
+```
+
+```{r}
+dane_czyste <- filter(dane,dane$MentHlth!=0, dane$PhysHlth!=0)
+summary(dane_czyste)
+```
+
+```{r}
+library(PerformanceAnalytics)
+dane_czyste %>%
+  select(BMI, MentHlth) %>%
+chart.Correlation()
+```
+
+```{r}
+library(GGally)
+dane_czyste %>%
+  select(Diabetes_binary, HighBP, HighChol, CholCheck, Smoker,
+         Stroke, HeartDiseaseorAttack, PhysActivity, Fruits,
+         Veggies, HvyAlcoholConsump, DiffWalk, Sex, Age,
+         Education, Income) %>%
+ggpairs()
 ```
