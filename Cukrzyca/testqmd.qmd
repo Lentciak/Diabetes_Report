@@ -1,0 +1,161 @@
+---
+title: "test_diabetes"
+author: "SO, IN"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r echo=FALSE, message=FALSE}
+#Załadowanie potrzebnych bibliotek
+
+library(tidyverse)
+library(caret)
+library(rcompanion)
+library(knitr)
+library(kableExtra)
+library(scales)
+library(rstatix)
+library(rpart)
+library(rattle)
+```
+
+```{r}
+#Załadowanie zbioru danych
+
+setwd("~/Uczelnia Dokumenty/SEM 5/ProjektAnalizaDanych")
+dane <- read.csv("diabetes_binary_5050.csv", header = TRUE, sep = ",", dec = ".")
+```
+
+```{r}
+#Podział zbioru na zmienne jakościowe i ilościowe, 
+#dodatkowo utworzenie podzbioru wyłącznie ze zmiennymi jakościowymi
+
+numeric_vars <- c('BMI', 'MentHlth', 'PhysHlth')
+
+num_vars_cols <- which(colnames(dane) %in% numeric_vars)
+
+dane <- dane %>%
+  mutate(across(!all_of(num_vars_cols), as.factor))
+
+zmienne_jakosciowe <- dane[-num_vars_cols]
+zmienne_ilosciowe <- dane[num_vars_cols]
+```
+
+```{r}
+#Liczebność oraz proporcje w grupach zmiennych jakościowych
+
+freq_tab <- zmienne_jakosciowe %>% apply(2, freq_table)
+
+for (i in seq_along(freq_tab)) {
+  colnames(freq_tab[[i]])[1] <- names(freq_tab[i])
+}
+```
+
+```{r}
+kbl(freq_tab) %>%
+  kable_minimal()
+```
+
+```{r}
+get_summary_stats(zmienne_ilosciowe) %>% 
+  kbl() %>%
+  kable_minimal()
+```
+
+```{r}
+#Przykładowe wykresy obrazujące stosunek liczebności w podgrupach
+
+zmienne_jakosciowe %>%
+  select(Diabetes_binary, Age) %>%
+  group_by(Age, Diabetes_binary) %>%
+  ggplot(aes(Age, fill = Diabetes_binary)) + 
+  geom_bar(position = 'dodge') + 
+  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), labels = c('Zdrowy', 'Diabetyk')) +
+  scale_x_discrete(labels = c('1' = '18-24', '2' = '25-29', '3' = '30-34', '4' = '35-39', 
+                              '5' = '40-44', '6' = '45-49', '7' = '50-54', '8' = '55-59', 
+                              '9' = '60-64', '10' = '65-69', '11' = '70-74', '12' = '75-79', 
+                              '13' = '80+')) +
+  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 35000, by = 5000)) +
+  labs(title = 'Liczba respondentów zdrowych i diabetyków w grupach wiekowych', 
+       x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.15, 0.85),
+        legend.background = element_rect(fill = 'gray'),
+        legend.key.size = unit(0.7, 'cm'))
+  
+```
+
+```{r}
+zmienne_jakosciowe %>%
+  select(Diabetes_binary, HighBP) %>%
+  group_by(Diabetes_binary, HighBP) %>%
+  ggplot(aes(Diabetes_binary, fill = HighBP)) + 
+  geom_bar(position = 'dodge') +
+  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
+                    labels = c('Ciśnienie w normie', 'Nadciśnienie')) +
+  scale_x_discrete(labels = c('0' = 'Zdrowy', '1' = 'Diabetyk')) +
+  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 125000, by = 25000)) +
+  labs(title = 'Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem', 
+       x = 'Czy respondent jest diabetykiem', y = 'Liczba respondentów') +
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.5, 0.8),
+        legend.background = element_rect(fill = 'gray'),
+        legend.key.size = unit(0.7, 'cm'))
+  
+```
+
+```{r}
+zmienne_jakosciowe %>%
+  select(Age, HighBP) %>%
+  group_by(Age, HighBP) %>%
+  ggplot(aes(Age, fill = HighBP)) + 
+  geom_bar(position = 'dodge') +
+  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
+                    labels = c('Ciśnienie w normie', 'Nadciśnienie')) +
+  scale_x_discrete(labels = c('1' = '18-24', '2' = '25-29', '3' = '30-34', '4' = '35-39', 
+                              '5' = '40-44', '6' = '45-49', '7' = '50-54', '8' = '55-59', 
+                              '9' = '60-64', '10' = '65-69', '11' = '70-74', '12' = '75-79', 
+                              '13' = '80+')) +
+  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 20000, by = 2500)) +
+  labs(title = 'Liczba respondentów w poszczególnych grupach wiekowych w zależności od ciśnienia krwi', 
+       x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
+  theme_minimal() +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.2, 0.8),
+        legend.background = element_rect(fill = 'gray'),
+        legend.key.size = unit(0.7, 'cm'))
+  
+```
+
+```{r}
+# Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych kategorycznych
+
+cramerV_table <- tibble(var1 = character(0),
+                        var2 = character(0),
+                        cv = numeric(0),
+                        dof = numeric(0))
+
+var_combs <- combn(colnames(zmienne_jakosciowe), m = 2, simplify = F)
+
+for (i in 1:length(var_combs)) {
+  cv <- cramerV(dane[[var_combs[[i]][1]]], dane[[var_combs[[i]][2]]])
+  dof <- min(length(levels(dane[[var_combs[[i]][1]]])) - 1, 
+            length(levels(dane[[var_combs[[i]][2]]])) - 1)
+  cramerV_table[i,] <- list(var_combs[[i]][1], var_combs[[i]][2], cv, dof)
+}
+```
+
+```{r}
+cramerV_table %>%
+  arrange(-cv) %>%
+  kbl(caption = "Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych nominalnych", col.names = c('Zmienna 1', 'Zmienna 2', 'Wartość współczynnika', 'DoF')) %>%
+  kable_paper() %>%
+  scroll_box(height = '500px')
+```
