@@ -6,10 +6,10 @@ format:
   html:
     code-fold: true
     code-tools: true
-    code-summary: "Show the code"
+    code-summary: "Pokaż kod"
     code-overflow: wrap
     smooth-scroll: true
-    highlight-style: arrow
+    highlight-style: dracula
     code-block-bg: true
     code-block-border-left: "#31BAE9"
     toc: true
@@ -84,6 +84,7 @@ Rodzaje cukrzycy: 
 **Income** - zmienna jakościowa opisująca zarobki pacjenta, przyjmuje wartości całkowite od 1 do 8 (przedziały zarobkowe)
 
 ```{r message=FALSE}
+#| echo: false
 #Załadowanie potrzebnych bibliotek
 
 library(tidyverse)
@@ -136,9 +137,12 @@ zmienne_jakosciowe <- dane[-num_vars_cols]
 zmienne_ilosciowe <- dane[num_vars_cols]
 ```
 
-#### Liczebność i proporcje
+## Przedstawienie liczebności obserwacji
+
+### Zmienne jakościowe
 
 ```{r Liczebność oraz proporcje w grupach zmiennych jakościowych}
+#| echo: false
 freq_tab <- zmienne_jakosciowe %>% apply(2, freq_table)
 
 for (i in seq_along(freq_tab)) {
@@ -147,10 +151,30 @@ for (i in seq_along(freq_tab)) {
 ```
 
 ```{r}
-
-kbl(freq_tab) %>%
+#| column: page
+kbl(freq_tab[1:4]) %>%
   kable_minimal()
 ```
+
+```{r}
+#| column: page
+#| echo: false
+kbl(freq_tab[5:8]) %>%
+  kable_minimal()
+```
+
+```{r}
+#| column: page
+kbl(freq_tab[9:12]) %>%
+  kable_minimal()
+```
+
+```{r}
+kbl(freq_tab[c(14,17:19)]) %>%
+  kable_minimal()
+```
+
+### Zmienne ilościowe
 
 ```{r}
 get_summary_stats(zmienne_ilosciowe) %>% 
@@ -158,8 +182,11 @@ get_summary_stats(zmienne_ilosciowe) %>%
   kable_minimal()
 ```
 
-```{r Przykładowe wykresy obrazujące stosunek liczebności w podgrupach}
+### Podział na wiek
 
+```{r Przykładowe wykresy obrazujące stosunek liczebności w podgrupach}
+#| label: fig-wiek
+#| fig-cap: Liczba respondentów zdrowych i diabetyków w grupach wiekowych
 zmienne_jakosciowe %>%
   select(Diabetes_binary, Age) %>%
   group_by(Age, Diabetes_binary) %>%
@@ -172,8 +199,7 @@ zmienne_jakosciowe %>%
                               '13' = '80+')) +
   scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
                      breaks = seq(from = 0, to = 35000, by = 5000)) +
-  labs(title = 'Liczba respondentów zdrowych i diabetyków w grupach wiekowych', 
-       x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
+  labs(x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
   theme_minimal() +
   theme(legend.title = element_blank(),
         legend.position = c(0.15, 0.85),
@@ -181,7 +207,11 @@ zmienne_jakosciowe %>%
         legend.key.size = unit(0.7, 'cm'))
 ```
 
+### Podział na ciśnienie
+
 ```{r}
+#| label: fig-diab
+#| fig-cap: Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem
 zmienne_jakosciowe %>%
   select(Diabetes_binary, HighBP) %>%
   group_by(Diabetes_binary, HighBP) %>%
@@ -192,8 +222,7 @@ zmienne_jakosciowe %>%
   scale_x_discrete(labels = c('0' = 'Zdrowy', '1' = 'Diabetyk')) +
   scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
                      breaks = seq(from = 0, to = 125000, by = 25000)) +
-  labs(title = 'Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem', 
-       x = 'Czy respondent jest diabetykiem', y = 'Liczba respondentów') +
+  labs(x = 'Czy respondent jest diabetykiem', y = 'Liczba respondentów') +
   theme_minimal() +
   theme(legend.title = element_blank(),
         legend.position = c(0.5, 0.8),
@@ -202,6 +231,8 @@ zmienne_jakosciowe %>%
 ```
 
 ```{r}
+#| label: fig-ciswiek
+#| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od ciśnienia krwi
 zmienne_jakosciowe %>%
   select(Age, HighBP) %>%
   group_by(Age, HighBP) %>%
@@ -215,8 +246,7 @@ zmienne_jakosciowe %>%
                               '13' = '80+')) +
   scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
                      breaks = seq(from = 0, to = 20000, by = 2500)) +
-  labs(title = 'Liczba respondentów w poszczególnych grupach wiekowych w zależności od ciśnienia krwi', 
-       x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
+  labs(x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
   theme_dark() +
   theme(legend.title = element_blank(),
         legend.position = c(0.2, 0.8),
@@ -225,7 +255,7 @@ zmienne_jakosciowe %>%
 ```
 
 ```{r Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych kategorycznych}
-
+#| echo: false
 
 cramerV_table <- tibble(var1 = character(0),
                         var2 = character(0),
@@ -243,16 +273,17 @@ for (i in 1:length(var_combs)) {
 ```
 
 ```{r}
-#| code-fold: true
-#| code-summary: "Show the code"
+#| label: tbl-cramer
+#| tbl-cap: Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych nominalnych
+#| output: page
 cramerV_table %>%
   arrange(-cv) %>%
-  kbl(caption = "Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych nominalnych", col.names = c('Zmienna 1', 'Zmienna 2', 'Wartość współczynnika', 'DoF')) %>%
-  kable_paper() %>%
+  kbl(col.names = c('Zmienna 1', 'Zmienna 2', 'Wartość współczynnika', 'DoF')) %>%
+  kable_minimal() %>%
   scroll_box(height = '500px')
 ```
 
-### Źródła
+## Źródła
 
 Dane pochodzą ze zbioru:
 
