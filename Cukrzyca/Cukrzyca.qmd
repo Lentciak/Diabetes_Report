@@ -15,8 +15,8 @@ format:
     toc: true
     toc-title: "Spis treści"
 theme:
-  dark: darkly
   light: lightly
+  dark: darkly
 editor: visual
 echo: true
 warning: false
@@ -96,7 +96,19 @@ library(scales)
 library(rstatix)
 library(rpart)
 library(rattle)
+library(DT)
+library(gt)
+library(olsrr)
+library(summarytools)
 ```
+
+```{css, echo = FALSE}
+.output {
+max-height: 500px;
+overflow-y: scroll;
+}
+```
+
 
 ```{r}
 #| warning: false
@@ -139,7 +151,25 @@ zmienne_ilosciowe <- dane[num_vars_cols]
 
 ## Przedstawienie liczebności obserwacji
 
-### Zmienne jakościowe
+```{r}
+#| class: output
+print(
+  dfSummary(dane, 
+            varnumbers   = FALSE,
+            na.col       = FALSE,
+            style        = "multiline",
+            plain.ascii  = FALSE,
+            valid.col = FALSE,
+            headings     = FALSE,
+            graph.magnif = .9,
+            footnote = NA),
+  method = "render"
+)
+```
+
+
+
+
 
 ```{r Liczebność oraz proporcje w grupach zmiennych jakościowych}
 #| echo: false
@@ -151,35 +181,33 @@ for (i in seq_along(freq_tab)) {
 ```
 
 ```{r}
-#| column: page
-kbl(freq_tab[1:4]) %>%
-  kable_minimal()
-```
-
-```{r}
-#| column: page
 #| echo: false
-kbl(freq_tab[5:8]) %>%
-  kable_minimal()
+dark_theme <- function() {
+  theme(panel.background = element_rect(fill = '#222222'),
+        plot.background = element_rect(fill = '#222222'),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text = element_text(colour = 'white'),
+        axis.title = element_text(colour = 'white'),
+        legend.title = element_blank(),
+        legend.background = element_rect(fill = 'gray'))
+}
 ```
 
 ```{r}
-#| column: page
-kbl(freq_tab[9:12]) %>%
-  kable_minimal()
-```
-
-```{r}
-kbl(freq_tab[c(14,17:19)]) %>%
-  kable_minimal()
-```
-
-### Zmienne ilościowe
-
-```{r}
-get_summary_stats(zmienne_ilosciowe) %>% 
-  kbl() %>%
-  kable_minimal()
+#| echo: false
+light_theme <- function() {
+  theme(panel.background = element_rect(fill = 'white'),
+        plot.background = element_rect(fill = 'white'),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_line(color = "black"),
+        panel.grid.minor.y = element_line(color = "gray"),
+        axis.text = element_text(colour = 'black'),
+        axis.title = element_text(colour = 'black'),
+        legend.title = element_blank(),
+        legend.background = element_rect(fill = 'gray'))
+}
 ```
 
 ### Podział na wiek
@@ -192,22 +220,38 @@ zmienne_jakosciowe %>%
   group_by(Age, Diabetes_binary) %>%
   ggplot(aes(Age, fill = Diabetes_binary)) + 
   geom_bar(position = 'dodge') + 
-  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), labels = c('Zdrowy', 'Diabetyk')) +
-  scale_x_discrete(labels = c('1' = '18-24', '2' = '25-29', '3' = '30-34', '4' = '35-39', 
-                              '5' = '40-44', '6' = '45-49', '7' = '50-54', '8' = '55-59', 
-                              '9' = '60-64', '10' = '65-69', '11' = '70-74', '12' = '75-79', 
+  scale_fill_manual(values = c('0' = '#007FFF', 
+                               '1' = 'red'),   
+                    labels = c('Zdrowy', 'Diabetyk')) +
+  scale_x_discrete(labels = c('1' = '18-24', 
+                              '2' = '25-29',
+                              '3' = '30-34', 
+                              '4' = '35-39', 
+                              '5' = '40-44', 
+                              '6' = '45-49', 
+                              '7' = '50-54', 
+                              '8' = '55-59', 
+                              '9' = '60-64', 
+                              '10' = '65-69', 
+                              '11' = '70-74', 
+                              '12' = '75-79', 
                               '13' = '80+')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 35000, by = 5000)) +
+  scale_y_continuous(labels = label_number(scale = 1e-3,
+                                           suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 35000, 
+                                  by = 1000)) +
   labs(x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        legend.position = c(0.15, 0.85),
-        legend.background = element_rect(fill = 'gray'),
+  dark_theme() +
+  theme(legend.position = c(0.15, 0.85),
         legend.key.size = unit(0.7, 'cm'))
 ```
 
+Możemy zauważyć wzrost diabetyków wraz ze wzrostem wieku pacjenta. Dla grup 60-64 i wyżej są oni dominującą częścią.
+
 ### Podział na ciśnienie
+
+::: panel-tabset
+## Wykres słupkowy
 
 ```{r}
 #| label: fig-diab
@@ -218,17 +262,23 @@ zmienne_jakosciowe %>%
   ggplot(aes(Diabetes_binary, fill = HighBP)) + 
   geom_bar(position = 'dodge') +
   scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
-                    labels = c('Ciśnienie w normie', 'Nadciśnienie')) +
-  scale_x_discrete(labels = c('0' = 'Zdrowy', '1' = 'Diabetyk')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 125000, by = 25000)) +
-  labs(x = 'Czy respondent jest diabetykiem', y = 'Liczba respondentów') +
-  theme_minimal() +
-  theme(legend.title = element_blank(),
-        legend.position = c(0.5, 0.8),
-        legend.background = element_rect(fill = 'gray'),
+                    labels = c('Ciśnienie w normie',
+                               'Nadciśnienie')) +
+  scale_x_discrete(labels = c('0' = 'Zdrowy', 
+                              '1' = 'Diabetyk')) +
+  scale_y_continuous(labels = label_number(scale = 1e-3,
+                                           suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 125000, 
+                                  by = 5000)) +
+  labs(x = 'Czy respondent jest diabetykiem', 
+       y = 'Liczba respondentów') +
+  dark_theme()+
+  theme(legend.position = c(0.5, 0.8),
         legend.key.size = unit(0.7, 'cm'))
+  
 ```
+
+## Histogram
 
 ```{r}
 #| label: fig-ciswiek
@@ -239,49 +289,34 @@ zmienne_jakosciowe %>%
   ggplot(aes(Age, fill = HighBP)) + 
   geom_bar(position = 'dodge') +
   scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
-                    labels = c('Ciśnienie w normie', 'Nadciśnienie')) +
-  scale_x_discrete(labels = c('1' = '18-24', '2' = '25-29', '3' = '30-34', '4' = '35-39', 
-                              '5' = '40-44', '6' = '45-49', '7' = '50-54', '8' = '55-59', 
-                              '9' = '60-64', '10' = '65-69', '11' = '70-74', '12' = '75-79', 
+                    labels = c('Ciśnienie w normie',
+                               'Nadciśnienie')) +
+  scale_x_discrete(labels = c('1' = '18-24', 
+                              '2' = '25-29', 
+                              '3' = '30-34', 
+                              '4' = '35-39', 
+                              '5' = '40-44', 
+                              '6' = '45-49', 
+                              '7' = '50-54', 
+                              '8' = '55-59', 
+                              '9' = '60-64', 
+                              '10' = '65-69', 
+                              '11' = '70-74', 
+                              '12' = '75-79', 
                               '13' = '80+')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3, suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 20000, by = 2500)) +
-  labs(x = 'Grupa wiekowa', y = 'Liczba respondentów') + 
-  theme_dark() +
-  theme(legend.title = element_blank(),
-        legend.position = c(0.2, 0.8),
-        legend.background = element_rect(fill = 'gray'),
+  scale_y_continuous(labels = label_number(scale = 1e-3,
+                                           suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 20000, 
+                                  by = 1000)) +
+  labs(x = 'Grupa wiekowa', 
+       y = 'Liczba respondentów') + 
+  dark_theme() +
+  theme(legend.position = c(0.2, 0.8),
         legend.key.size = unit(0.7, 'cm'))
 ```
+:::
 
-```{r Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych kategorycznych}
-#| echo: false
-
-cramerV_table <- tibble(var1 = character(0),
-                        var2 = character(0),
-                        cv = numeric(0),
-                        dof = numeric(0))
-
-var_combs <- combn(colnames(zmienne_jakosciowe), m = 2, simplify = F)
-
-for (i in 1:length(var_combs)) {
-  cv <- cramerV(dane[[var_combs[[i]][1]]], dane[[var_combs[[i]][2]]])
-  dof <- min(length(levels(dane[[var_combs[[i]][1]]])) - 1, 
-            length(levels(dane[[var_combs[[i]][2]]])) - 1)
-  cramerV_table[i,] <- list(var_combs[[i]][1], var_combs[[i]][2], cv, dof)
-}
-```
-
-```{r}
-#| label: tbl-cramer
-#| tbl-cap: Tabela współczynnika kontyngencji V-Cramera dla poszczególnych par zmiennych nominalnych
-#| output: page
-cramerV_table %>%
-  arrange(-cv) %>%
-  kbl(col.names = c('Zmienna 1', 'Zmienna 2', 'Wartość współczynnika', 'DoF')) %>%
-  kable_minimal() %>%
-  scroll_box(height = '500px')
-```
+U diabetyków częściej stwierdzono nadciśnienie. Rośnie też ono wraz z wiekiem.
 
 ## Źródła
 
