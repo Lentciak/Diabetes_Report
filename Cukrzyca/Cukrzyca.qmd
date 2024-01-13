@@ -34,59 +34,14 @@ knitr:
 
 **Cukrzyca** to cywilizacyjna choroba metaboliczna, charakteryzująca się podwyższonym stężeniem cukru we krwi. Cukrzyca związana jest z nieprawidłowym wydzielaniem i/lub działaniem insuliny w organizmie.
 
-Rodzaje cukrzycy: 
+Rodzaje cukrzycy:
 
--   Cukrzyca typu 1 -- charakteryzuje się niedoborem insuliny. Diabetyk wymaga leczenia insuliną. 
+-   Cukrzyca typu 1 -- charakteryzuje się niedoborem insuliny. Diabetyk wymaga leczenia insuliną.
 
--   Cukrzyca typu 2 -- typowe dla niej jest zaburzone działanie i/lub wydzielanie insuliny. Osoba chora musi stosować odpowiednią dietę i przyjmować lekarstwa 
+-   Cukrzyca typu 2 -- typowe dla niej jest zaburzone działanie i/lub wydzielanie insuliny. Osoba chora musi stosować odpowiednią dietę i przyjmować lekarstwa.
 
 -   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzenia dziecka podwyższony poziom glukozy wraca do normy.
 
-## Opis zmiennych
-
-**Diabetes_binary** - zmienna jakościowa, przyjmuje wartości 0 - brak cukrzycy, 1 - chory na cukrzycę
-
-**HighBP** - zmienna jakościowa, przyjmuje wartości 0 lub 1 oznaczające czy u danego pacjenta stwierdzono podwyższone ciśnienie krwi
-
-**HighChol** - zmienna jakościowa, przyjmuje wartości 0 - u pacjenta nie stwierdzono wysokiego poziomu cholesterolu, 1 - u pacjenta stwierdzono wysoki poziom cholesterolu
-
-**CholCheck** - zmienna jakościowa, przyjmuje wartości 0 - w ciągu ostatnich 5 lat pacjent nie sprawdzał poziomu cholesterolu, 1 - w ciągu ostatnich 5 lat pacjent sprawdzał poziom cholesterolu
-
-**BMI** - zmienna ilościowa, wskaźnik masy ciała
-
-**Smoker** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie palący, 1 - pacjent jest palący (w rozumieniu, czy na przestrzeni życia wypalił przynajmniej 100 papierosów, ok. 5 paczek)
-
-**Stroke** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie doświadczył udaru mózgu, 1 - pacjent doświadczył udaru mózgu
-
-**HeartDiseaseorAttack** - zmienna jakościowa, przyjmuje wartości 0 albo 1 w zależności od tego, czy pacjent przebył w przeszłości zawał serca/choruje na niedokrwienność serca, czy jest zdrowy.
-
-**PhysActivity** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie posiada aktywności fizycznej z ostatnich 30 dni, 1 - pacjent
-
-**Fruits** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie spożywa 1 lub więcej owoców w ciągu dnia, 1 - pacjent spożywa 1 lub więcej owoców w ciągu dnia
-
-**Veggies** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie spożywa 1 lub więcej warzyw w ciągu dnia, 1 - pacjent spożywa 1 lub więcej warzyw w ciągu dnia
-
-**HvyAlcoholConsump** - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent w ciągu tygodnia wypija 14 lub więcej (w przypadku mężczyzn) albo 7 lub więcej (w przypadku kobiet) napojów alkoholowych.
-
-**AnyHealthcare** - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent posiada jakiegoś typu ubezpieczenie zdrowotne.
-
-**NoDocbcCost** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeżeli w ciągu ostatnich 12 miesięcy pacjent zrezygnował z wizyty u lekarza ze względu na jej wysoką cenę 
-
-**GenHlth** - zmienna jakościowa odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 1 (doskonały) do 5 (słaby)
-
-**MentHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie psychiczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem psychicznym (podwyższony stres, stany depresyjne/depresja, problemy związane z emocjami) 
-
-**PhysHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie fizyczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem fizycznym (schorzenia i urazy) 
-
-**DiffWalk** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeśli pacjent ma poważne problemy z chodzeniem lub wchodzeniem po schodach.
-
-**Sex** - zmienna jakościowa określająca płeć pacjenta
-
-**Age** - zmienna jakościowa określająca wiek pacjenta, przyjmuje wartości 1 do 13 (grupy wiekowe)
-
-**Education** - zmienna jakościowa określająca poziom wykształcenia pacjenta, przyjmuje wartości całkowite od 1 do 6
-
-**Income** - zmienna jakościowa opisująca zarobki pacjenta, przyjmuje wartości całkowite od 1 do 8 (przedziały zarobkowe)
 
 ```{r Załadowanie potrzebnych bibliotek}
 library(tidyverse)
@@ -123,11 +78,13 @@ theme_light <- function() {
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.y = element_line(color = "black"),
-        panel.grid.minor.y = element_line(color = "gray"),
+        panel.grid.minor.y = element_line(color = "gray40"),
         axis.text = element_text(colour = 'black'),
         axis.title = element_text(colour = 'black'),
         legend.title = element_blank(),
-        legend.background = element_rect(fill = 'gray'))
+        legend.background = element_rect(fill = 'gray'),
+        axis.title.x = element_text(size = 14,vjust = -0.9),
+        axis.title.y = element_text(size = 14, angle = 90, vjust = 1.5))
 }
 
 darksvglite <- function(file, width, height) {
@@ -184,9 +141,8 @@ observer.observe(window.document.body, {
 updateImageSrc();
 ```
 
-
 ```{r Zamiana zmiennych jakościowych na factor}
-dane = read_csv('diabetes_split.csv')
+dane = read_csv('diabetes_binary.csv')
 dane <- dane %>%
 mutate(CholCheck = factor(CholCheck),
 HighBP = factor(HighBP),
@@ -221,10 +177,60 @@ zmienne_jakosciowe <- dane[-num_vars_cols]
 zmienne_ilosciowe <- dane[num_vars_cols]
 ```
 
-## Przedstawienie liczebności obserwacji
+## Opis zbioru danych
 
-```{r Przedstawienie liczebności obserwacji}
-#| class: output
+<tekst z kaggla>
+
+::: panel-tabset
+
+### Opis zmiennych
+
+**Diabetes_binary** - zmienna jakościowa, przyjmuje wartości 0 - brak cukrzycy, 1 - chory na cukrzycę
+
+**HighBP** - zmienna jakościowa, przyjmuje wartości 0 lub 1 oznaczające czy u danego pacjenta stwierdzono podwyższone ciśnienie krwi
+
+**HighChol** - zmienna jakościowa, przyjmuje wartości 0 - u pacjenta nie stwierdzono wysokiego poziomu cholesterolu, 1 - u pacjenta stwierdzono wysoki poziom cholesterolu
+
+**CholCheck** - zmienna jakościowa, przyjmuje wartości 0 - w ciągu ostatnich 5 lat pacjent nie sprawdzał poziomu cholesterolu, 1 - w ciągu ostatnich 5 lat pacjent sprawdzał poziom cholesterolu
+
+**BMI** - zmienna ilościowa, wskaźnik masy ciała
+
+**Smoker** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie palący, 1 - pacjent jest palący (w rozumieniu, czy na przestrzeni życia wypalił przynajmniej 100 papierosów, ok. 5 paczek)
+
+**Stroke** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie doświadczył udaru mózgu, 1 - pacjent doświadczył udaru mózgu
+
+**HeartDiseaseorAttack** - zmienna jakościowa, przyjmuje wartości 0 albo 1 w zależności od tego, czy pacjent przebył w przeszłości zawał serca/choruje na niedokrwienność serca, czy jest zdrowy.
+
+**PhysActivity** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie posiada aktywności fizycznej z ostatnich 30 dni, 1 - pacjent
+
+**Fruits** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie spożywa 1 lub więcej owoców w ciągu dnia, 1 - pacjent spożywa 1 lub więcej owoców w ciągu dnia
+
+**Veggies** - zmienna jakościowa, przyjmuje wartości 0 - pacjent nie spożywa 1 lub więcej warzyw w ciągu dnia, 1 - pacjent spożywa 1 lub więcej warzyw w ciągu dnia
+
+**HvyAlcoholConsump** - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent w ciągu tygodnia wypija 14 lub więcej (w przypadku mężczyzn) albo 7 lub więcej (w przypadku kobiet) napojów alkoholowych.
+
+**AnyHealthcare** - zmienna jakościowa, przyjmuje wartości 0 lub 1, w zależności od tego czy pacjent posiada jakiegoś typu ubezpieczenie zdrowotne.
+
+**NoDocbcCost** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeżeli w ciągu ostatnich 12 miesięcy pacjent zrezygnował z wizyty u lekarza ze względu na jej wysoką cenę 
+
+**GenHlth** - zmienna jakościowa odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 1 (doskonały) do 5 (słaby)
+
+**MentHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie psychiczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem psychicznym (podwyższony stres, stany depresyjne/depresja, problemy związane z emocjami) 
+
+**PhysHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie fizyczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem fizycznym (schorzenia i urazy) 
+
+**DiffWalk** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeśli pacjent ma poważne problemy z chodzeniem lub wchodzeniem po schodach.
+
+**Sex** - zmienna jakościowa określająca płeć pacjenta
+
+**Age** - zmienna jakościowa określająca wiek pacjenta, przyjmuje wartości 1 do 13 (grupy wiekowe)
+
+**Education** - zmienna jakościowa określająca poziom wykształcenia pacjenta, przyjmuje wartości całkowite od 1 do 6
+
+**Income** - zmienna jakościowa opisująca zarobki pacjenta, przyjmuje wartości całkowite od 1 do 8 (przedziały zarobkowe)
+
+### Statystyki opisowe zmiennych
+```{r Statystyki opisowe zmiennych}
 print(
   dfSummary(dane, 
             varnumbers   = FALSE,
@@ -238,7 +244,7 @@ print(
   method = "render"
 )
 ```
-
+:::
 
 ```{r Liczebność oraz proporcje w grupach zmiennych jakościowych}
 freq_tab <- zmienne_jakosciowe %>% apply(2, freq_table)
@@ -249,13 +255,13 @@ for (i in seq_along(freq_tab)) {
 ```
 
 
+## Wykresy cech w badanej próbie
 
-
-### Podział ze względu na wiek
+### Cechy ze względu na grupy wiekowe
 ::: panel-tabset
-## Diabetycy
+#### Cukrzyca
 
-```{r Przykładowe wykresy obrazujące stosunek liczebności w podgrupach}
+```{r Wykres obrazujący cukrzyków w podgrupach wiekowych}
 #| label: fig-wiek_diab
 #| fig-cap: Liczba respondentów zdrowych i diabetyków w grupach wiekowych
 theme_set(theme_light())
@@ -283,17 +289,56 @@ zmienne_jakosciowe %>%
   scale_y_continuous(labels = label_number(scale = 1e-3,
                                            suffix = ' tys.'), 
                      breaks = seq(from = 0, to = 35000, 
-                                  by = 1000)) +
+                                  by = 2000)) +
   labs(x = 'Grupa wiekowa', y = 'Liczba respondentów')+
   theme(legend.position = c(0.15, 0.85),
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-Możemy zauważyć wzrost liczebności diabetyków względem zdrowych, wraz ze wzrostem wieku pacjenta. Dla grup wiekowych od 60-64 i wyżej są oni dominującą częścią. 
+
+```{r Stworzenie zmienne_jakosciowe_z_freq}
+zmienne_jakosciowe_z_freq <- zmienne_jakosciowe %>%
+group_by(Age, Diabetes_binary) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+
+#### Cukrzyca(procent)
+```{r Wykres obrazujący procentowy rozkład cukrzyków w podgrupach wiekowych}
+#| label: fig-wiek_pop
+#| fig-cap: Częstotliwość respondentów zdrowych i diabetyków w grupach wiekowych
+theme_set(theme_light())
+zmienne_jakosciowe_z_freq %>%
+  select(Diabetes_binary, Age, freq) %>%
+  group_by(Age, Diabetes_binary) %>%
+  ggplot(aes(x= Age, y=freq, fill = Diabetes_binary)) + 
+  geom_col(position = 'dodge') + 
+  scale_fill_manual(values = c('0' = '#007FFF', 
+                               '1' = 'red'),   
+                    labels = c('Zdrowy', 'Diabetyk')) +
+  scale_x_discrete(labels = c('1' = '18-24', 
+                              '2' = '25-29',
+                              '3' = '30-34', 
+                              '4' = '35-39', 
+                              '5' = '40-44', 
+                              '6' = '45-49', 
+                              '7' = '50-54', 
+                              '8' = '55-59', 
+                              '9' = '60-64', 
+                              '10' = '65-69', 
+                              '11' = '70-74', 
+                              '12' = '75-79', 
+                              '13' = '80+')) +
+  scale_y_continuous(breaks = seq(from = 0, to = 1, 
+                                  by = 0.1))+
+  labs(x = 'Grupa wiekowa', y = 'Część populacji')+
+  theme(legend.position = c(0.9, 0.92),
+        legend.key.size = unit(0.7, 'cm'))
+```
 
 
-## Płeć
-```{r}
+#### Płeć
+```{r Liczba respondentów w poszczególnych grupach wiekowych w zależności od płci}
 #| label: fig-wiek_plec
 #| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od płci
 theme_set(theme_light())
@@ -321,124 +366,16 @@ zmienne_jakosciowe %>%
   scale_y_continuous(labels = label_number(scale = 1e-3,
                                            suffix = ' tys.'), 
                      breaks = seq(from = 0, to = 35000, 
-                                  by = 1000)) +
+                                  by = 2000)) +
   labs(x = 'Grupa wiekowa', y = 'Liczba respondentów')+
   theme(legend.position = c(0.15, 0.85),
         legend.key.size = unit(0.7, 'cm'))
 ```
-
-Warto zauważyć, że kobiety stanowią większość osób chorych, ponieważ są bardziej narażone na cukrzycę ciążową.
-
-
-## Zarobki
-```{r}
-#| label: fig-wiek_zarobki
-#| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od zarobków
-theme_set(theme_light())
-zmienne_jakosciowe %>%
-  select(Age, Income) %>%
-  group_by(Age, Income) %>%
-  ggplot(aes(Age, fill = Income)) + 
-  geom_bar(position = 'dodge') +
-  scale_fill_manual(values = c('0' = '#007FFF', 
-                               '1' = 'red',
-                               '2' = 'purple',
-                               '3' = 'blue',
-                               '4' = 'lightblue',
-                               '5' = 'lightgreen',
-                               '6' = 'limegreen',
-                               '7' = 'green',
-                               '8' = 'yellow'), 
-                    labels = c('mniej niż $10,000',
-                               'mniej niż $15,000',
-                               'mniej niż $20,000',
-                               'mniej niż $25,000',
-                               'mniej niż $35,000',
-                               'mniej niż $50,000',
-                               'mniej niż $75,000',
-                               '$75,000 lub więcej')) +
-  scale_x_discrete(labels = c('1' = '18-24', 
-                              '2' = '25-29', 
-                              '3' = '30-34', 
-                              '4' = '35-39', 
-                              '5' = '40-44', 
-                              '6' = '45-49', 
-                              '7' = '50-54', 
-                              '8' = '55-59', 
-                              '9' = '60-64', 
-                              '10' = '65-69', 
-                              '11' = '70-74', 
-                              '12' = '75-79', 
-                              '13' = '80+')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3,
-                                           suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 20000, 
-                                  by = 1000)) +
-  labs(x = 'Grupa wiekowa', 
-       y = 'Liczba respondentów')+
-  theme(legend.position = c(0.25, 0.7),
-        legend.key.size = unit(0.7, 'cm'))
-
-```
-
-## Wykształcenie
-```{r}
-#| label: fig-wiek_wyksztalcenie
-#| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od wykształcenia
-theme_set(theme_light())
-zmienne_jakosciowe %>%
-  select(Age, Education) %>%
-  group_by(Age, Education) %>%
-  ggplot(aes(Age, fill = Education)) + 
-  geom_bar(position = 'dodge') +
-  scale_fill_manual(values = c('0' = '#007FFF', 
-                               '1' = 'red',
-                               '2' = 'purple',
-                               '3' = 'blue',
-                               '4' = 'lightblue',
-                               '5' = 'lightgreen',
-                               '6' = 'limegreen',
-                               '7' = 'green',
-                               '8' = 'yellow'), 
-                    labels = c('mniej niż 9 lat',
-                               '9-11 lat',
-                               '12 lat',
-                               '13-15 lat',
-                               '16 lat',
-                               '17 lat',
-                               '18 lat',
-                               '19 lat',
-                               '20 lat lub więcej')) +
-  scale_x_discrete(labels = c('1' = '18-24', 
-                              '2' = '25-29', 
-                              '3' = '30-34', 
-                              '4' = '35-39', 
-                              '5' = '40-44', 
-                              '6' = '45-49', 
-                              '7' = '50-54', 
-                              '8' = '55-59', 
-                              '9' = '60-64', 
-                              '10' = '65-69', 
-                              '11' = '70-74', 
-                              '12' = '75-79', 
-                              '13' = '80+')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3,
-                                           suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 20000, 
-                                  by = 1000)) +
-  labs(x = 'Grupa wiekowa', 
-       y = 'Liczba respondentów')+
-  theme(legend.position = c(0.25, 0.7),
-        legend.key.size = unit(0.7, 'cm'))
-```
 :::
 
-### Podział na ciśnienie
+### Cechy ze względu na ciśnienie
 
-::: panel-tabset
-## Wykres słupkowy
-
-```{r}
+```{r Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem}
 #| label: fig-cis_diab
 #| fig-cap: Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem
 theme_set(theme_light())
@@ -454,99 +391,80 @@ zmienne_jakosciowe %>%
                               '1' = 'Diabetyk')) +
   scale_y_continuous(labels = label_number(scale = 1e-3,
                                            suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 125000, 
-                                  by = 5000)) +
+                     breaks = seq(from = 0, to = 150000, 
+                                  by = 20000)) +
   labs(x = 'Czy respondent jest diabetykiem', 
        y = 'Liczba respondentów') +
   theme(legend.position = c(0.5, 0.8),
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-## Histogram
 
-```{r}
-#| label: fig-cis_wiek
-#| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od ciśnienia krwi
-theme_set(theme_light())
-zmienne_jakosciowe %>%
-  select(Age, HighBP) %>%
-  group_by(Age, HighBP) %>%
-  ggplot(aes(Age, fill = HighBP)) + 
-  geom_bar(position = 'dodge') +
-  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
-                    labels = c('Ciśnienie w normie',
-                               'Nadciśnienie')) +
-  scale_x_discrete(labels = c('1' = '18-24', 
-                              '2' = '25-29', 
-                              '3' = '30-34', 
-                              '4' = '35-39', 
-                              '5' = '40-44', 
-                              '6' = '45-49', 
-                              '7' = '50-54', 
-                              '8' = '55-59', 
-                              '9' = '60-64', 
-                              '10' = '65-69', 
-                              '11' = '70-74', 
-                              '12' = '75-79', 
-                              '13' = '80+')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3,
-                                           suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 20000, 
-                                  by = 1000)) +
-  labs(x = 'Grupa wiekowa', 
-       y = 'Liczba respondentów') +
-  theme(legend.position = c(0.2, 0.8),
-        legend.key.size = unit(0.7, 'cm'))
-```
-:::
+### Cechy ze względu na zarobki
 
-U diabetyków częściej stwierdzono nadciśnienie. Rośnie też ono wraz z wiekiem.
-
-### Podział na zarobki
-
-::: panel-tabset
-
-## Histogram
-
-```{r}
+```{r Wykres zarobków w zależności od stanu zdrowia}
 #| label: fig-zarobki
 #| fig-cap: Wykres zarobków w zależności od stanu zdrowia
 theme_set(theme_light())
 zmienne_jakosciowe %>%
   select(Diabetes_binary, Income) %>%
   group_by(Diabetes_binary, Income) %>%
-  ggplot(aes(Diabetes_binary, fill = Income)) + 
+  ggplot(aes(Income, fill = Diabetes_binary)) + 
   geom_bar(position = 'dodge') +
-  scale_fill_manual(values = c('0' = '#007FFF', 
-                               '1' = 'red',
-                               '2' = 'purple',
-                               '3' = 'blue',
-                               '4' = 'lightblue',
-                               '5' = 'lightgreen',
-                               '6' = 'limegreen',
-                               '7' = 'green',
-                               '8' = 'yellow'), 
-                    labels = c('mniej niż $10,000',
-                               'mniej niż $15,000',
-                               'mniej niż $20,000',
-                               'mniej niż $25,000',
-                               'mniej niż $35,000',
-                               'mniej niż $50,000',
-                               'mniej niż $75,000',
-                               '$75,000 lub więcej')) +
-  scale_x_discrete(labels = c('0' = 'Zdrowy', 
-                              '1' = 'Diabetyk')) +
+  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
+                    labels = c('Zdrowy',
+                               'Diabetyk')) +
+  scale_x_discrete(labels = c('1' = 'mniej niż $10,000', 
+                              '2' = 'mniej niż $15,000',
+                              '3' = 'mniej niż $20,000',
+                              '4' = 'mniej niż $25,000',
+                              '5' = 'mniej niż $35,000',
+                              '6' = 'mniej niż $50,000',
+                              '7' = 'mniej niż $75,000',
+                              '8' = '$75,000 lub więcej')) +
   scale_y_continuous(labels = label_number(scale = 1e-3,
                                            suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 125000, 
-                                  by = 1000)) +
-  labs(x = 'Płeć', 
+                     breaks = seq(from = 0, to = 87000, 
+                                  by = 10000)) +
+  labs(x = 'Zarobki', 
        y = 'Liczba respondentów') +
   theme(legend.position = c(0.65, 0.7),
-        legend.key.size = unit(0.7, 'cm'))
+        legend.key.size = unit(0.7, 'cm'),
+        axis.text.x = element_text(angle = 45, vjust= 0.5, hjust = 0.6),
+        axis.title.x = element_text(vjust = -0.9),
+        axis.title.y = element_text(vjust = 1.5, angle = 90))
 ```
 
+
+### Cechy ze względu na BMI
+
+<wykres z ggpubr>
+
+<pyramid plot>
+
+
+## Modele klasyfikacji
+
+<tutaj wyniki z testów>
+
+::: panel-tabset
+### Regresja logistyczna
+
+
+### Drzewo decyzyjne
+
+
+### Las losowy
+
+
+### XGBoost
+
 :::
+
+## Wnioski
+
+
+<wnioski>
 
 
 ## Źródła
