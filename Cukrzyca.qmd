@@ -1,5 +1,5 @@
 ---
-title: "Problem klasyfikacji pacjentów z cukrzycą na podstawie ich cech"
+title: "Problem klasyfikacji pacjentów pod względem zachorowania na cukrzycę"
 author: "Szymon Olędzki, Igor Nowiński"
 language: 'polski.yml'
 format:
@@ -28,11 +28,13 @@ knitr:
   opts_chunk: 
     dev: [svglite, darksvglite]
     fig.ext: [.light.svg, .dark.svg]
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Czym jest cukrzyca?
 
-**Cukrzyca** to cywilizacyjna choroba metaboliczna, charakteryzująca się podwyższonym stężeniem cukru we krwi. Cukrzyca związana jest z nieprawidłowym wydzielaniem i/lub działaniem insuliny w organizmie.
+**Cukrzyca** to cywilizacyjna choroba przewlekła charakteryzująca się utratą zdolności do skutecznego regulowania poziomu glukozy we krwi, co może prowadzić do obniżenia jakości i długości życia chorego.
 
 Rodzaje cukrzycy:
 
@@ -41,6 +43,8 @@ Rodzaje cukrzycy:
 -   Cukrzyca typu 2 -- typowe dla niej jest zaburzone działanie i/lub wydzielanie insuliny. Osoba chora musi stosować odpowiednią dietę i przyjmować lekarstwa.
 
 -   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzenia dziecka podwyższony poziom glukozy wraca do normy.
+
+Cukrzyca to jedna z najczęściej występujących chorób przewlekłych w Stanach Zjednoczonych, dotykająca każdego roku miliony Amerykanów. Z danych Centers for Disease Control and Prevention (CDC) wynika, że w 2018 roku **34,2 miliona** Amerykanów choruje na cukrzycę, a **88 milionów** ma stan przedcukrzycowy. Dodatkowo, CDC szacuje, że 1 na 5 osób z cukrzycą i około 8 na 10 osób w stanie przedcukrzycowym nie zdaje sobie sprawy z ryzyka związanego z tą chorobą. Wysoki poziom cukru we krwi przez długi czas u osób z cukrzycą wiąże się z powikłaniami, takimi jak choroby serca, utrata wzroku, amputacja kończyn dolnych i choroba nerek. Chociaż nie ma lekarstwa na cukrzycę, strategie takie jak utrata wagi, zdrowa dieta, aktywność fizyczna i leczenie medyczne mogą złagodzić skutki tej choroby u wielu pacjentów. Wczesna diagnoza może prowadzić do zmiany stylu życia i bardziej skutecznego leczenia, dlatego modele predykcyjne ryzyka cukrzycy stanowią istotne narzędzie dla służb zdrowia publicznego.
 
 ```{r Załadowanie potrzebnych bibliotek}
 library(tidyverse)
@@ -57,6 +61,7 @@ library(gt)
 library(summarytools)
 library(ggplot2)
 library(cvms)
+library(ggpubr)
 ```
 
 ```{r Załadowanie motywów}
@@ -179,7 +184,9 @@ zmienne_tylko_jakosciowe <- dane[-c(num_vars_cols, ord_vars_cols)]
 
 ## Opis zbioru danych
 
-<tekst z kaggla>
+Behavioral Risk Factor Surveillance System (BRFSS) to coroczne badanie telefoniczne związane ze zdrowiem, prowadzone przez CDC. Każdego roku badanie to gromadzi odpowiedzi od ponad 400 000 Amerykanów dotyczące zachowań związanych z ryzykiem zdrowotnym, przewlekłych stanów zdrowia i korzystania z usług profilaktycznych.
+
+Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który jest bazą dla niniejszego projektu. Składa się z 229474 obserwacji opisanych przez 20 zmiennych, które zostały opisane poniżej.
 
 ::: panel-tabset
 ### Opis zmiennych
@@ -245,6 +252,12 @@ print(
 )
 ```
 :::
+
+## Cele projektu
+
+Głównym celem niniejszego projektu jest zbudowanie klasyfikacyjnych modeli uczenia maszynowego, które na podstawie danych dotyczących respondenta pozwolą stwierdzić, czy choruje on na cukrzycę.
+
+Celem pobocznym jest eksploracyjna analiza zbioru danych i przeprowadzenie testów statystycznych dla wybranych zagadnień.
 
 ## Testy statystyczne dla wybranych cech w badanej próbie
 
@@ -520,7 +533,7 @@ test_prop_trend_age_highbp %>%
 Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy potwierdzić występowanie trendu wzrostowego w liczbie chorujących na nadciśnienie wraz ze wzrostem wieku.
 :::
 
-### Cukrzyca ze względu na ciśnienie krwi
+### Ciśnienie krwi względem zachorowania na cukrzycę
 
 ::: panel-tabset
 #### Cukrzyca
@@ -574,7 +587,7 @@ zmienne_jakosciowe_z_freq3 %>%
                               '1' = 'Diabetyk')) +
   scale_y_continuous(breaks = seq(from = 0, to = 1, 
                                   by = 0.1),
-                     labels = scales::percent)+
+                     labels = scales::percent) +
   labs(x = 'Czy respondent jest diabetykiem', 
        y = 'Odsetek respondentów') +
   theme(legend.position = c(0.5, 0.8),
@@ -607,15 +620,22 @@ Na podstawie p-value przeprowadzonego testu proporcji odrzucamy $H_0$ na korzyś
 
 ### Cukrzyca ze względu na zarobki
 
+```{r Stworzenie zmienne_jakosciowe_z_freq4}
+zmienne_jakosciowe_z_freq4 <- zmienne_jakosciowe %>%
+group_by(Income, Diabetes_binary) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+
 ```{r Wykres zarobków w zależności od stanu zdrowia}
 #| label: fig-zarobki
-#| fig-cap: Wykres zarobków w zależności od stanu zdrowia
+#| fig-cap: Odsetek respondentów zdrowych i chorych na cukrzycę w przedziałach zarobkowych
 theme_set(theme_light())
-zmienne_jakosciowe %>%
-  select(Diabetes_binary, Income) %>%
+zmienne_jakosciowe_z_freq4 %>%
+  select(Diabetes_binary, Income, freq) %>%
   group_by(Diabetes_binary, Income) %>%
-  ggplot(aes(Income, fill = Diabetes_binary)) + 
-  geom_bar(position = 'dodge') +
+  ggplot(aes(x= Income, y= freq, fill = Diabetes_binary)) + 
+  geom_col(position = 'dodge') +
   scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
                     labels = c('Zdrowy',
                                'Diabetyk')) +
@@ -627,14 +647,11 @@ zmienne_jakosciowe %>%
                               '6' = 'mniej niż $50,000',
                               '7' = 'mniej niż $75,000',
                               '8' = '$75,000 lub więcej')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3,
-                                           suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 87000, 
-                                  by = 10000)) +
-  labs(x = 'Zarobki', 
-       y = 'Liczba respondentów') +
-  theme(legend.position = c(0.15, 0.8),
-        legend.key.size = unit(0.7, 'cm'),
+  scale_y_continuous(breaks = seq(from = 0, to = 1, by = 0.1),
+                     labels = scales::percent) +
+  labs(x = 'Zarobki', y = 'Część próby') +
+  theme(legend.position = c(0.1, 0.9),
+        legend.key.size = unit(0.4, 'cm'),
         axis.text.x = element_text(angle = 45, vjust= 0.5, hjust = 0.6),
         axis.title.x = element_text(vjust = -0.9),
         axis.title.y = element_text(vjust = 1.5, angle = 90))
@@ -670,7 +687,40 @@ Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy p
 
 ### Cukrzyca ze względu na BMI
 
-<wykres z ggpubr>
+```{r levele diabetes_binary}
+levels(dane$Diabetes_binary) <- list("Zdrowy" = 0, "Diabetyk" = 1) 
+```
+
+```{r Wykres BMI w zależności od stanu zdrowia}
+gghist <- dane %>%
+  select(Diabetes_binary, BMI) %>%
+ gghistogram(x = "BMI", 
+            fill = "Diabetes_binary", 
+            color = "Diabetes_binary",
+            add = "mean",
+            bins = 100,
+            rug = F,
+            theme = theme_light())
+
+```
+
+```{r Wczytanie wykresu BMI w zależności od stanu zdrowia}
+#| label: fig-bmi
+#| fig-cap: Liczba respondentów z danym BMI w zależności od stanu zdrowia
+ggpar(gghist,
+      legend = c(0.8, 0.8),
+      legend.title = "",
+      xlim = c(12,98),
+      palette = c('#007FFF', 'red')) +
+  scale_y_continuous(labels = label_number(scale = 1e-3,
+                                           suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 25000, 
+                                  by = 2000)) +
+  scale_x_continuous(breaks = seq(from = 12, to = 98, 
+                                  by = 4)) +
+  labs(x = 'BMI', y = 'Liczba respondentów')
+  
+```
 
 Na podstawie powyższego wykresu możemy podejrzewać, że istnieje istotna statystycznie różnica pod względem średniego BMI między grupami osób zdrowych i chorujących na cukrzycę. Aby zweryfikować to podejrzenie, przeprowadzimy test na równość średnich w dwóch populacjach dla następujących hipotez:
 
@@ -689,6 +739,10 @@ H_0: \sigma^2_1=\sigma^2_2 \\
 H_1: \sigma^2_1\neq\sigma^2_2
 \end{align}
 $$ gdzie $\sigma_1, \sigma_2$ oznaczają odpowiednio estymatory wariancji BMI dla populacji osób zdrowych oraz chorujących na cukrzycę.
+
+```{r Podmiana Diabetes_binary na początkowe wartości}
+levels(dane$Diabetes_binary) <- list("0" = "Zdrowy", "1" = "Diabetyk") 
+```
 
 ```{r Test równości dwóch wariancji - BMI, echo=T}
 #| code-summary: 'Pokaż kod testu równości wariancji'
@@ -917,7 +971,7 @@ x <- dane.train[-1]
 y <- dane.train$Diabetes_binary
 
 # UWAGA! Zanim skorzystasz z możliwości zrównoleglenia obliczeń, sprawdź liczbę dostępnych rdzeni fizycznych swojego procesora za pomocą `parallel::detectCores(logical = F)` i odejmij 1 lub 2 z nich.
-cl <- makeCluster(6, type = 'SOCK') 
+cl <- makeCluster(3, type = 'SOCK') 
 
 registerDoSNOW(cl)
 
@@ -1071,7 +1125,7 @@ koniec_ths <- Sys.time()
 ```
 
 ```{r Wczytanie gotowego modelu lasu losowego}
-rf_bin <- readRDS('Modele/rf_model.rds')
+#rf_bin <- readRDS('Modele/rf_model.rds')
 ```
 
 Z odpowiednio dobranym progiem odcięcia możemy przystąpić do przeprowadzenia predykcji na zbiorze testowym i zweryfikowania skuteczności modelu.

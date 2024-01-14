@@ -1,0 +1,87 @@
+---
+title: "DecTree"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(caret)
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+#Załadowanie zbioru danych
+
+setwd("~/Uczelnia Dokumenty/SEM 5/ProjektAnalizaDanych")
+dane <- read.csv("diabetes_binary_data.csv", header = TRUE, sep = ",", dec = ".")
+```
+
+```{r}
+#Podział zbioru na zmienne jakościowe i ilościowe, 
+#dodatkowo utworzenie podzbioru wyłącznie ze zmiennymi jakościowymi
+
+numeric_vars <- c('BMI', 'MentHlth', 'PhysHlth')
+
+num_vars_cols <- which(colnames(dane) %in% numeric_vars)
+
+dane <- dane %>%
+  mutate(across(!all_of(num_vars_cols), as.factor))
+
+#Należy dodatkowo wyróżnić zmienne, w których ważny jest porządek danych wartości nominalnych, jak np. wiek. Z tego powodu musimy je dodatkowo uporządkować.
+
+with_order_vars <- c('Age', 'Education', 'Income', 'GenHlth')
+
+dane <- dane %>%
+  mutate(across(all_of(with_order_vars), as.ordered))
+
+dane$GenHlth <- fct_rev(dane$GenHlth)
+
+#Pozbywamy się również duplikatów danych ze zbioru
+dane <- distinct(dane)
+```
+
+```{r}
+#Usuwamy ze zbioru zmienne o niskiej wariancji, bo nie wniosą do modelu istotnych informacji
+dane <- dane[,-nearZeroVar(dane)]
+```
+
+```{r}
+#Łączymy pierwsze 3 poziomy zmiennej 'Education', ze względu na bardzo niewielką ilość informacji jaką przekazują osobno
+
+dane$Education <- fct_collapse(dane$Education, '3-' = c('1', '2', '3'))
+```
+
+```{r}
+#PODZIAŁ DANYCH
+set.seed(2024)
+
+trainIndex <- createDataPartition(dane$Diabetes_binary,
+                                  p = .75,
+                                  list = FALSE)
+
+dane.train <- dane[trainIndex,]
+dane.test <- dane[-trainIndex,]
+
+dane.train.tree <- downSample(x = dane.train[,-1], y = dane.train$Diabetes_binary, yname = 'Diabetes_binary')
+#dane.test <- downSample(x = dane.test[,-1], y = dane.test$Diabetes_binary, yname = 'Diabetes_binary')
+```
+
+```{r}
+drzewo <- rpart(Diabetes_binary ~ ., data = dane.train.tree, method = 'class', control = rpart.control(minsplit = 7500, cp = 0.001))
+```
+
+```{r}
+pred <- predict(drzewo, dane.test)
+pred <- ifelse(pred[,1]>=0.49, 'no', 'yes')
+```
+
+```{r}
+confusionMatrix(data = as.factor(pred), reference = dane.test$Diabetes_binary, positive = 'yes')
+```
+
+```{r}
+library(rattle)
+fancyRpartPlot(drzewo, caption = '', type = 2)
+```
