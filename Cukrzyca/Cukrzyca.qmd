@@ -42,7 +42,6 @@ Rodzaje cukrzycy:
 
 -   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzenia dziecka podwyższony poziom glukozy wraca do normy.
 
-
 ```{r Załadowanie potrzebnych bibliotek}
 library(tidyverse)
 library(caret)
@@ -141,40 +140,24 @@ observer.observe(window.document.body, {
 updateImageSrc();
 ```
 
-```{r Zamiana zmiennych jakościowych na factor}
-dane = read_csv('diabetes_binary.csv')
+```{r Wczytanie zbioru danych oraz przygotowanie go do dalszej pracy}
+dane <- read.csv("diabetes_binary_data.csv")
+
+numeric_vars <- c('BMI', 'MentHlth', 'PhysHlth') #zmienne ilościowe
+
+with_order_vars <- c('Age', 'Education', 'Income', 'GenHlth') #zmienne jakościowe porządkowe
+
+#zamiana odpowiednich zmiennych ze zbioru na jakościowe oraz porządkowe
 dane <- dane %>%
-mutate(CholCheck = factor(CholCheck),
-HighBP = factor(HighBP),
-HighChol = factor(HighChol),
-Smoker = factor(Smoker),
-Stroke = factor(Stroke),
-HeartDiseaseorAttack = factor(HeartDiseaseorAttack),
-PhysActivity = factor(PhysActivity),
-Fruits = factor(Fruits),
-Veggies = factor(Veggies),
-HvyAlcoholConsump = factor(HvyAlcoholConsump),
-AnyHealthcare = factor(AnyHealthcare),
-NoDocbcCost = factor(NoDocbcCost),
-DiffWalk = factor(DiffWalk),
-Sex = factor(Sex),
-Diabetes_binary = factor(Diabetes_binary),
-Age = factor(Age),
-Education = factor(Education),
-Income = factor(Income),
-GenHlth = factor(GenHlth))
-```
-
-```{r Podział zbioru na zmienne jakościowe i ilościowe, dodatkowo utworzenie podzbioru wyłącznie ze zmiennymi jakościowymi}
-numeric_vars <- c('BMI', 'MentHlth', 'PhysHlth')
-
-num_vars_cols <- which(colnames(dane) %in% numeric_vars)
+  mutate(across(!all_of(numeric_vars), as.factor))
 
 dane <- dane %>%
-  mutate(across(!all_of(num_vars_cols), as.factor))
+  mutate(across(all_of(with_order_vars), as.ordered))
 
-zmienne_jakosciowe <- dane[-num_vars_cols]
-zmienne_ilosciowe <- dane[num_vars_cols]
+dane$GenHlth <- fct_rev(dane$GenHlth)
+
+#usunięcie duplikatów danych
+dane <- distinct(dane)
 ```
 
 ## Opis zbioru danych
@@ -182,7 +165,6 @@ zmienne_ilosciowe <- dane[num_vars_cols]
 <tekst z kaggla>
 
 ::: panel-tabset
-
 ### Opis zmiennych
 
 **Diabetes_binary** - zmienna jakościowa, przyjmuje wartości 0 - brak cukrzycy, 1 - chory na cukrzycę
@@ -230,6 +212,7 @@ zmienne_ilosciowe <- dane[num_vars_cols]
 **Income** - zmienna jakościowa opisująca zarobki pacjenta, przyjmuje wartości całkowite od 1 do 8 (przedziały zarobkowe)
 
 ### Statystyki opisowe zmiennych
+
 ```{r Statystyki opisowe zmiennych}
 print(
   dfSummary(dane, 
@@ -254,10 +237,10 @@ for (i in seq_along(freq_tab)) {
 }
 ```
 
-
 ## Wykresy cech w badanej próbie
 
 ### Cechy ze względu na grupy wiekowe
+
 ::: panel-tabset
 #### Cukrzyca
 
@@ -295,7 +278,6 @@ zmienne_jakosciowe %>%
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-
 ```{r Stworzenie zmienne_jakosciowe_z_freq}
 zmienne_jakosciowe_z_freq <- zmienne_jakosciowe %>%
 group_by(Age, Diabetes_binary) %>%
@@ -304,6 +286,7 @@ group_by(Age, Diabetes_binary) %>%
 ```
 
 #### Cukrzyca(procent)
+
 ```{r Wykres obrazujący procentowy rozkład cukrzyków w podgrupach wiekowych}
 #| label: fig-wiek_pop
 #| fig-cap: Częstotliwość respondentów zdrowych i diabetyków w grupach wiekowych
@@ -336,8 +319,8 @@ zmienne_jakosciowe_z_freq %>%
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-
 #### Płeć
+
 ```{r Liczba respondentów w poszczególnych grupach wiekowych w zależności od płci}
 #| label: fig-wiek_plec
 #| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od płci
@@ -399,7 +382,6 @@ zmienne_jakosciowe %>%
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-
 ### Cechy ze względu na zarobki
 
 ```{r Wykres zarobków w zależności od stanu zdrowia}
@@ -435,13 +417,11 @@ zmienne_jakosciowe %>%
         axis.title.y = element_text(vjust = 1.5, angle = 90))
 ```
 
-
 ### Cechy ze względu na BMI
 
 <wykres z ggpubr>
 
 <pyramid plot>
-
 
 ## Modele klasyfikacji
 
@@ -450,22 +430,16 @@ zmienne_jakosciowe %>%
 ::: panel-tabset
 ### Regresja logistyczna
 
-
 ### Drzewo decyzyjne
-
 
 ### Las losowy
 
-
 ### XGBoost
-
 :::
 
 ## Wnioski
 
-
 <wnioski>
-
 
 ## Źródła
 
