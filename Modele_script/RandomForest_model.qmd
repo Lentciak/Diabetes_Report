@@ -17,9 +17,7 @@ library(doSNOW)
 
 ```{r}
 #Załadowanie zbioru danych
-
-setwd("~/Uczelnia Dokumenty/SEM 5/ProjektAnalizaDanych")
-dane <- read.csv("diabetes_binary_data.csv", header = TRUE, sep = ",", dec = ".")
+dane <- read.csv("diabetes_binary.csv", header = TRUE, sep = ",", dec = ".")
 ```
 
 ```{r}

@@ -12,15 +12,12 @@ editor_options:
 ```{r}
 library(tidyverse)
 library(caret)
-library(bestglm)
-library(parallel)
+library(doSNOW)
 ```
 
 ```{r}
 #Załadowanie zbioru danych
-
-setwd("~/Uczelnia Dokumenty/SEM 5/ProjektAnalizaDanych")
-dane <- read.csv("diabetes_binary_data.csv", header = TRUE, sep = ",", dec = ".")
+dane <- read.csv("diabetes_binary.csv", header = TRUE, sep = ",", dec = ".")
 ```
 
 ```{r}
@@ -50,7 +47,6 @@ dane <- distinct(dane)
 ```{r}
 #Usuwamy ze zbioru zmienne o niskiej wariancji, bo nie wniosą do modelu istotnych informacji
 dane <- dane[,-nearZeroVar(dane)]
-num_vars_cols <- which(colnames(dane) %in% numeric_vars)
 ```
 
 ```{r}

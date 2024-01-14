@@ -1,7 +1,12 @@
 ---
 title: "DecTree"
+author: "Szymon Olędzki, Igor Nowiński"
 format: html
+theme: 
+  dark: darkly
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -13,9 +18,7 @@ library(rpart.plot)
 
 ```{r}
 #Załadowanie zbioru danych
-
-setwd("~/Uczelnia Dokumenty/SEM 5/ProjektAnalizaDanych")
-dane <- read.csv("diabetes_binary_data.csv", header = TRUE, sep = ",", dec = ".")
+dane <- read.csv("diabetes_binary.csv", header = TRUE, sep = ",", dec = ".")
 ```
 
 ```{r}
@@ -65,14 +68,15 @@ dane.train <- dane[trainIndex,]
 dane.test <- dane[-trainIndex,]
 
 dane.train.tree <- downSample(x = dane.train[,-1], y = dane.train$Diabetes_binary, yname = 'Diabetes_binary')
-#dane.test <- downSample(x = dane.test[,-1], y = dane.test$Diabetes_binary, yname = 'Diabetes_binary')
 ```
 
 ```{r}
+# Utworzenie modelu drzewa decyzyjnego
 drzewo <- rpart(Diabetes_binary ~ ., data = dane.train.tree, method = 'class', control = rpart.control(minsplit = 7500, cp = 0.001))
 ```
 
 ```{r}
+# Predykcja na zbiorze testowym
 pred <- predict(drzewo, dane.test)
 pred <- ifelse(pred[,1]>=0.49, 'no', 'yes')
 ```
