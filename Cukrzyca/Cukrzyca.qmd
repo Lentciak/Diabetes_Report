@@ -1,5 +1,5 @@
 ---
-title: "Cukrzyca"
+title: "Problem klasyfikacji pacjentów z cukrzycą na podstawie ich cech"
 author: "Szymon Olędzki, Igor Nowiński"
 language: 'polski.yml'
 format:
@@ -28,6 +28,8 @@ knitr:
   opts_chunk: 
     dev: [svglite, darksvglite]
     fig.ext: [.light.svg, .dark.svg]
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Czym jest cukrzyca?
@@ -54,9 +56,10 @@ library(rpart)
 library(rattle)
 library(DT)
 library(gt)
-library(olsrr)
 library(summarytools)
 library(ggplot2)
+library(cvms)
+library(ggpubr)
 ```
 
 ```{r Załadowanie motywów}
@@ -77,7 +80,7 @@ theme_light <- function() {
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.y = element_line(color = "black"),
-        panel.grid.minor.y = element_line(color = "gray40"),
+        panel.grid.minor.y = element_line(color = "gray30"),
         axis.text = element_text(colour = 'black'),
         axis.title = element_text(colour = 'black'),
         legend.title = element_blank(),
@@ -141,13 +144,16 @@ updateImageSrc();
 ```
 
 ```{r Wczytanie zbioru danych oraz przygotowanie go do dalszej pracy}
-dane <- read.csv("diabetes_binary_data.csv")
+# Wczytujemy plik ze zbiorem danych
+dane <- read.csv("diabetes_binary.csv")
 
-numeric_vars <- c('BMI', 'MentHlth', 'PhysHlth') #zmienne ilościowe
+#sum(is.na(dane)) #sprawdzenie braków danych - można je wykonać, ale zbiór ich nie zawiera
 
-with_order_vars <- c('Age', 'Education', 'Income', 'GenHlth') #zmienne jakościowe porządkowe
+numeric_vars <- c('BMI', 'MentHlth', 'PhysHlth') # Zmienne ilościowe
 
-#zamiana odpowiednich zmiennych ze zbioru na jakościowe oraz porządkowe
+with_order_vars <- c('Age', 'Education', 'Income', 'GenHlth') # Zmienne jakościowe porządkowe
+
+# Zamieniamy odpowiednie zmienne ze zbioru na jakościowe oraz porządkowe
 dane <- dane %>%
   mutate(across(!all_of(numeric_vars), as.factor))
 
@@ -156,8 +162,22 @@ dane <- dane %>%
 
 dane$GenHlth <- fct_rev(dane$GenHlth)
 
-#usunięcie duplikatów danych
+# Usuwamy duplikaty danych
 dane <- distinct(dane)
+
+# Usuwamy ze zbioru zmienne o najniższej wariancji, bo nie wniosą do modeli istotnych informacji (freqCut = 95/5)
+dane <- dane[,-nearZeroVar(dane)]
+
+# Łączymy pierwsze 3 poziomy zmiennej 'Education', ze względu na bardzo niewielką ilość informacji jaką przekazują osobno
+dane$Education <- fct_collapse(dane$Education, '3-' = c('1', '2', '3'))
+
+num_vars_cols <- which(colnames(dane) %in% numeric_vars)
+ord_vars_cols <- which(colnames(dane) %in% with_order_vars)
+
+# Te dwa podzbiory danych przydadzą się później
+zmienne_jakosciowe <- dane[-c(num_vars_cols)]
+
+zmienne_tylko_jakosciowe <- dane[-c(num_vars_cols, ord_vars_cols)]
 ```
 
 ## Opis zbioru danych
@@ -195,7 +215,7 @@ dane <- distinct(dane)
 
 **NoDocbcCost** - zmienna jakościowa, przyjmuje wartości 0 lub 1, jeżeli w ciągu ostatnich 12 miesięcy pacjent zrezygnował z wizyty u lekarza ze względu na jej wysoką cenę 
 
-**GenHlth** - zmienna jakościowa odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 1 (doskonały) do 5 (słaby)
+**GenHlth** - zmienna jakościowa odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 5 (słaby) do 1 (doskonały)
 
 **MentHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie psychiczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuj się dobrze pod względem psychicznym (podwyższony stres, stany depresyjne/depresja, problemy związane z emocjami) 
 
@@ -218,33 +238,25 @@ print(
   dfSummary(dane, 
             varnumbers   = FALSE,
             na.col       = FALSE,
-            style        = "multiline",
+            style        = "grid",
             plain.ascii  = FALSE,
             valid.col = FALSE,
             headings     = FALSE,
             graph.magnif = .9,
-            footnote = NA),
-  method = "render"
+            max.distinct.values = 13),
+  method = "render", footnote = NA
 )
 ```
 :::
 
-```{r Liczebność oraz proporcje w grupach zmiennych jakościowych}
-freq_tab <- zmienne_jakosciowe %>% apply(2, freq_table)
+## Testy statystyczne dla wybranych cech w badanej próbie
 
-for (i in seq_along(freq_tab)) {
-  colnames(freq_tab[[i]])[1] <- names(freq_tab[i])
-}
-```
-
-## Wykresy cech w badanej próbie
-
-### Cechy ze względu na grupy wiekowe
+### Dane cechy ze względu na grupy wiekowe
 
 ::: panel-tabset
 #### Cukrzyca
 
-```{r Wykres obrazujący cukrzyków w podgrupach wiekowych}
+```{r Wykres liczba respondentów zdrowych i diabetyków w grupach wiekowych}
 #| label: fig-wiek_diab
 #| fig-cap: Liczba respondentów zdrowych i diabetyków w grupach wiekowych
 theme_set(theme_light())
@@ -278,6 +290,36 @@ zmienne_jakosciowe %>%
         legend.key.size = unit(0.7, 'cm'))
 ```
 
+Na podstawie wykresów @fig-wiek_diab oraz @fig-wiek_diab_proc możemy zauważyć występowanie trendu wzrostowego w liczbie chorujących na cukrzycę wraz ze wzrostem wieku w próbie osób badanych. Występowanie takowego trendu zweryfikujemy przeprowadzając test $\chi^2$ trendu dla następujących hipotez:
+
+$$
+\begin{align}
+H_0 &: \text{Nie występuje trend liniowy dla proporcji w kolejnych grupach wiekowych} \\
+H_1 &: \text{Występuje trend liniowy dla proporcji w kolejnych grupach wiekowych}
+\end{align}
+$$
+
+```{r Test chi-kwadrat dla trendu wiek-cukrzyca, echo=T}
+#| code-summary: 'Pokaż kod testu chi-kwadrat dla trendu'
+
+tab_age_diab <- table(dane$Age, dane$Diabetes_binary)
+dimnames(tab_age_diab) <- list(`wiek` = as.character(c(1:13)),
+                                  `ciśnienie` = c('diabetyk', 'zdrowy'))
+
+tab_age_diab[, c(1, 2)] <- tab_age_diab[, c(2, 1)]
+
+test_prop_trend_age_diab <- prop_trend_test(tab_age_diab)
+
+test_prop_trend_age_diab %>% 
+  select(p, method) %>% 
+  gt() %>% 
+  cols_label(p = md('**P-value testu**'), method = md('**Rodzaj testu**'))
+```
+
+Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy potwierdzić występowanie trendu wzrostowego w liczbie chorujących na cukrzycę wraz ze wzrostem wieku.
+
+#### Cukrzyca(%)
+
 ```{r Stworzenie zmienne_jakosciowe_z_freq}
 zmienne_jakosciowe_z_freq <- zmienne_jakosciowe %>%
 group_by(Age, Diabetes_binary) %>%
@@ -285,11 +327,9 @@ group_by(Age, Diabetes_binary) %>%
   mutate(freq = n / sum(n))
 ```
 
-#### Cukrzyca(procent)
-
-```{r Wykres obrazujący procentowy rozkład cukrzyków w podgrupach wiekowych}
-#| label: fig-wiek_pop
-#| fig-cap: Częstotliwość respondentów zdrowych i diabetyków w grupach wiekowych
+```{r Wykres odsetek respondentów zdrowych i diabetyków w grupach wiekowych}
+#| label: fig-wiek_diab_proc
+#| fig-cap: Odsetek respondentów zdrowych i diabetyków w grupach wiekowych
 theme_set(theme_light())
 zmienne_jakosciowe_z_freq %>%
   select(Diabetes_binary, Age, freq) %>%
@@ -313,26 +353,55 @@ zmienne_jakosciowe_z_freq %>%
                               '12' = '75-79', 
                               '13' = '80+')) +
   scale_y_continuous(breaks = seq(from = 0, to = 1, 
-                                  by = 0.1))+
+                                  by = 0.1),
+                     labels = scales::percent)+
   labs(x = 'Grupa wiekowa', y = 'Część populacji')+
-  theme(legend.position = c(0.9, 0.92),
+  theme(legend.position = c(0.76, 0.9),
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-#### Płeć
+Na podstawie wykresów @fig-wiek_diab oraz @fig-wiek_diab_proc możemy zauważyć występowanie trendu wzrostowego w liczbie chorujących na cukrzycę wraz ze wzrostem wieku w próbie osób badanych. Występowanie takowego trendu zweryfikujemy przeprowadzając test $\chi^2$ trendu dla następujących hipotez:
 
-```{r Liczba respondentów w poszczególnych grupach wiekowych w zależności od płci}
-#| label: fig-wiek_plec
-#| fig-cap: Liczba respondentów w poszczególnych grupach wiekowych w zależności od płci
+$$
+\begin{align}
+H_0 &: \text{Nie występuje trend liniowy dla proporcji w kolejnych grupach wiekowych} \\
+H_1 &: \text{Występuje trend liniowy dla proporcji w kolejnych grupach wiekowych}
+\end{align}
+$$
+
+```{r Test chi-kwadrat dla trendu wiek-cukrzyca-2, echo=T}
+#| code-summary: 'Pokaż kod testu chi-kwadrat dla trendu'
+
+tab_age_diab <- table(dane$Age, dane$Diabetes_binary)
+dimnames(tab_age_diab) <- list(`wiek` = as.character(c(1:13)),
+                                  `ciśnienie` = c('diabetyk', 'zdrowy'))
+
+tab_age_diab[, c(1, 2)] <- tab_age_diab[, c(2, 1)]
+
+test_prop_trend_age_diab <- prop_trend_test(tab_age_diab)
+
+test_prop_trend_age_diab %>% 
+  select(p, method) %>% 
+  gt() %>% 
+  cols_label(p = md('**P-value testu**'), method = md('**Rodzaj testu**'))
+```
+
+Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy potwierdzić występowanie trendu wzrostowego w liczbie chorujących na cukrzycę wraz ze wzrostem wieku.
+
+#### Ciśnienie
+
+```{r Wykres liczba respondentów zdrowych i z nadciśnieniem w grupach wiekowych}
+#| label: fig-wiek_cis
+#| fig-cap: Liczba respondentów zdrowych i z nadciśnieniem w grupach wiekowych
 theme_set(theme_light())
 zmienne_jakosciowe %>%
-  select(Sex, Age) %>%
-  group_by(Age, Sex) %>%
-  ggplot(aes(Age, fill = Sex)) + 
+  select(HighBP, Age) %>%
+  group_by(Age, HighBP) %>%
+  ggplot(aes(Age, fill = HighBP)) + 
   geom_bar(position = 'dodge') + 
   scale_fill_manual(values = c('0' = '#007FFF', 
                                '1' = 'red'),   
-                    labels = c('Kobieta', 'Mężczyzna')) +
+                    labels = c('Ciśnienie w normie', 'Nadciśnienie')) +
   scale_x_discrete(labels = c('1' = '18-24', 
                               '2' = '25-29',
                               '3' = '30-34', 
@@ -354,13 +423,114 @@ zmienne_jakosciowe %>%
   theme(legend.position = c(0.15, 0.85),
         legend.key.size = unit(0.7, 'cm'))
 ```
+
+Na podstawie wykresów @fig-wiek_cis oraz @fig-wiek_cis_proc możemy zauważyć występowanie trendu wzrostowego w liczbie chorujących na nadciśnienie wraz ze wzrostem wieku w próbie osób badanych. Występowanie takowego trendu zweryfikujemy przeprowadzając test $\chi^2$ trendu dla następujących hipotez:
+
+$$
+\begin{align}
+H_0 &: \text{Nie występuje trend liniowy dla proporcji w kolejnych grupach wiekowych} \\
+H_1 &: \text{Występuje trend liniowy dla proporcji w kolejnych grupach wiekowych}
+\end{align}
+$$
+
+```{r Test chi-kwadrat dla trendu wiek-ciśnienie, echo=T}
+#| code-summary: 'Pokaż kod testu chi-kwadrat dla trendu'
+
+tab_age_highbp <- table(dane$Age, dane$HighBP)
+dimnames(tab_age_highbp) <- list(`wiek` = as.character(c(1:13)),
+                                  `ciśnienie` = c('wysokie', 'norma'))
+
+tab_age_highbp[, c(1, 2)] <- tab_age_highbp[, c(2, 1)]
+
+test_prop_trend_age_highbp <- prop_trend_test(tab_age_highbp)
+
+test_prop_trend_age_highbp %>% 
+  select(p, method) %>% 
+  gt() %>% 
+  cols_label(p = md('**P-value testu**'), method = md('**Rodzaj testu**'))
+```
+
+Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy potwierdzić występowanie trendu wzrostowego w liczbie chorujących na nadciśnienie wraz ze wzrostem wieku.
+
+#### Ciśnienie(%)
+
+```{r Stworzenie zmienne_jakosciowe_z_freq2}
+zmienne_jakosciowe_z_freq2 <- zmienne_jakosciowe %>%
+group_by(Age, HighBP) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+
+```{r Wykres odsetek respondentów zdrowych i z nadciśnieniem w grupach wiekowych}
+#| label: fig-wiek_cis_proc
+#| fig-cap: Odsetek respondentów zdrowych i z nadciśnieniem w grupach wiekowych
+theme_set(theme_light())
+zmienne_jakosciowe_z_freq2 %>%
+  select(HighBP, Age, freq) %>%
+  group_by(Age, HighBP) %>%
+  ggplot(aes(x= Age, y=freq, fill = HighBP)) + 
+  geom_col(position = 'dodge') + 
+  scale_fill_manual(values = c('0' = '#007FFF', 
+                               '1' = 'red'),   
+                    labels = c('Ciśnienie w normie', 'Nadciśnienie')) +
+  scale_x_discrete(labels = c('1' = '18-24', 
+                              '2' = '25-29',
+                              '3' = '30-34', 
+                              '4' = '35-39', 
+                              '5' = '40-44', 
+                              '6' = '45-49', 
+                              '7' = '50-54', 
+                              '8' = '55-59', 
+                              '9' = '60-64', 
+                              '10' = '65-69', 
+                              '11' = '70-74', 
+                              '12' = '75-79', 
+                              '13' = '80+')) +
+  scale_y_continuous(breaks = seq(from = 0, to = 1, 
+                                  by = 0.1),
+                     labels = scales::percent) +
+  labs(x = 'Grupa wiekowa', y = 'Odsetek respondentów') +
+  theme(legend.position = c(0.8, 0.85),
+        legend.key.size = unit(0.7, 'cm'))
+```
+
+Na podstawie wykresów @fig-wiek_cis oraz @fig-wiek_cis_proc możemy zauważyć występowanie trendu wzrostowego w liczbie chorujących na nadciśnienie wraz ze wzrostem wieku w próbie osób badanych. Występowanie takowego trendu zweryfikujemy przeprowadzając test $\chi^2$ trendu dla następujących hipotez:
+
+$$
+\begin{align}
+H_0 &: \text{Nie występuje trend liniowy dla proporcji w kolejnych grupach wiekowych} \\
+H_1 &: \text{Występuje trend liniowy dla proporcji w kolejnych grupach wiekowych}
+\end{align}
+$$
+
+```{r Test chi-kwadrat dla trendu wiek-ciśnienie-2, echo=T}
+#| code-summary: 'Pokaż kod testu chi-kwadrat dla trendu'
+
+tab_age_highbp <- table(dane$Age, dane$HighBP)
+dimnames(tab_age_highbp) <- list(`wiek` = as.character(c(1:13)),
+                                  `ciśnienie` = c('wysokie', 'norma'))
+
+tab_age_highbp[, c(1, 2)] <- tab_age_highbp[, c(2, 1)]
+
+test_prop_trend_age_highbp <- prop_trend_test(tab_age_highbp)
+
+test_prop_trend_age_highbp %>% 
+  select(p, method) %>% 
+  gt() %>% 
+  cols_label(p = md('**P-value testu**'), method = md('**Rodzaj testu**'))
+```
+
+Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy potwierdzić występowanie trendu wzrostowego w liczbie chorujących na nadciśnienie wraz ze wzrostem wieku.
 :::
 
-### Cechy ze względu na ciśnienie
+### Cukrzyca ze względu na ciśnienie krwi
 
-```{r Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem}
+::: panel-tabset
+#### Cukrzyca
+
+```{r Wykres liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem}
 #| label: fig-cis_diab
-#| fig-cap: Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem
+#| fig-cap: Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem
 theme_set(theme_light())
 zmienne_jakosciowe %>%
   select(Diabetes_binary, HighBP) %>%
@@ -382,17 +552,79 @@ zmienne_jakosciowe %>%
         legend.key.size = unit(0.7, 'cm'))
 ```
 
-### Cechy ze względu na zarobki
+#### Cukrzyca(%)
+
+```{r Stworzenie zmienne_jakosciowe_z_freq3}
+zmienne_jakosciowe_z_freq3 <- zmienne_jakosciowe %>%
+group_by(Diabetes_binary, HighBP) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
+
+```{r Wykres odsetek respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem}
+#| label: fig-cis_diab_proc
+#| fig-cap: Odsetek respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem
+theme_set(theme_light())
+zmienne_jakosciowe_z_freq3 %>%
+  select(Diabetes_binary, HighBP, freq) %>%
+  group_by(Diabetes_binary, HighBP) %>%
+  ggplot(aes(Diabetes_binary, freq, fill = HighBP)) + 
+  geom_col(position = 'dodge') +
+  scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
+                    labels = c('Ciśnienie w normie',
+                               'Nadciśnienie')) +
+  scale_x_discrete(labels = c('0' = 'Zdrowy', 
+                              '1' = 'Diabetyk')) +
+  scale_y_continuous(breaks = seq(from = 0, to = 1, 
+                                  by = 0.1),
+                     labels = scales::percent)+
+  labs(x = 'Czy respondent jest diabetykiem', 
+       y = 'Odsetek respondentów') +
+  theme(legend.position = c(0.5, 0.8),
+        legend.key.size = unit(0.7, 'cm'))
+```
+:::
+
+Na podstawie powyższych wykresów zauważamy, że istnieje istotna różnica w proporcji osób z nadciśnieniem między grupami osób zdrowych i chorujących na cukrzycę. Aby poprzeć to spostrzeżenie obliczeniami przeprowadzimy test równości dwóch proporcji dla następujących hipotez:
+
+$$
+\begin{align}
+H_0: \hat{p_1}-\hat{p_2}=0 \\
+H_1: \hat{p_1}-\hat{p_2}<0
+\end{align}
+$$ gdzie $\hat{p_1}, \hat{p_2}$ oznaczają odpowiednio estymatory proporcji osób z nadciśnieniem w populacjach osób zdrowych oraz osób chorujących na cukrzycę.
+
+```{r Test równości dwóch proporcji - Diabetes/HighBP, echo=T}
+#| code-summary: 'Pokaż kod testu równości proporcji'
+
+tab_diab_highbp <- table(dane$Diabetes_binary, dane$HighBP)
+dimnames(tab_diab_highbp) <- list(`cukrzyca` = c('zdrowy', 'diabetyk'),
+                                  `ciśnienie` = c('wysokie', 'norma'))
+
+tab_diab_highbp[, c(1, 2)] <- tab_diab_highbp[, c(2, 1)]
+
+prop.test(tab_diab_highbp, alternative = 'less')
+```
+
+Na podstawie p-value przeprowadzonego testu proporcji odrzucamy $H_0$ na korzyść $H_1$, a zatem możemy stwierdzić, że istotnie statystycznie więcej diabetyków choruje na nadciśnienie.
+
+### Cukrzyca ze względu na zarobki
+```{r Stworzenie zmienne_jakosciowe_z_freq4}
+zmienne_jakosciowe_z_freq4 <- zmienne_jakosciowe %>%
+group_by(Diabetes_binary, Income) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+```
 
 ```{r Wykres zarobków w zależności od stanu zdrowia}
 #| label: fig-zarobki
 #| fig-cap: Wykres zarobków w zależności od stanu zdrowia
 theme_set(theme_light())
-zmienne_jakosciowe %>%
-  select(Diabetes_binary, Income) %>%
+zmienne_jakosciowe_z_freq4 %>%
+  select(Diabetes_binary, Income, freq) %>%
   group_by(Diabetes_binary, Income) %>%
-  ggplot(aes(Income, fill = Diabetes_binary)) + 
-  geom_bar(position = 'dodge') +
+  ggplot(aes(x= Income, y= freq, fill = Diabetes_binary)) + 
+  geom_col(position = 'dodge') +
   scale_fill_manual(values = c('0' = '#007FFF', '1' = 'red'), 
                     labels = c('Zdrowy',
                                'Diabetyk')) +
@@ -404,37 +636,550 @@ zmienne_jakosciowe %>%
                               '6' = 'mniej niż $50,000',
                               '7' = 'mniej niż $75,000',
                               '8' = '$75,000 lub więcej')) +
-  scale_y_continuous(labels = label_number(scale = 1e-3,
-                                           suffix = ' tys.'), 
-                     breaks = seq(from = 0, to = 87000, 
-                                  by = 10000)) +
-  labs(x = 'Zarobki', 
-       y = 'Liczba respondentów') +
-  theme(legend.position = c(0.65, 0.7),
-        legend.key.size = unit(0.7, 'cm'),
+  scale_y_continuous(breaks = seq(from = 0, to = 1, 
+                                  by = 0.1)) +
+  labs(x = 'Zarobki', y = 'Część próby') +
+  theme(legend.position = c(0.1, 0.9),
+        legend.key.size = unit(0.4, 'cm'),
         axis.text.x = element_text(angle = 45, vjust= 0.5, hjust = 0.6),
         axis.title.x = element_text(vjust = -0.9),
         axis.title.y = element_text(vjust = 1.5, angle = 90))
 ```
 
-### Cechy ze względu na BMI
+Na podstawie powyższego wykresu możemy zauważyć występowanie trendu spadkowego w liczbie chorujących na cukrzycę wraz ze wzrostem zarobków w próbie osób badanych. Występowanie takowego trendu zweryfikujemy przeprowadzając test $\chi^2$ trendu dla następujących hipotez:
 
-<wykres z ggpubr>
+$$
+\begin{align}
+H_0 &: \text{Nie występuje trend liniowy dla proporcji w kolejnych grupach wiekowych} \\
+H_1 &: \text{Występuje trend liniowy dla proporcji w kolejnych grupach wiekowych}
+\end{align}
+$$
 
-<pyramid plot>
+```{r Test chi-kwadrat dla trendu zarobki-cukrzyca, echo=T}
+#| code-summary: 'Pokaż kod testu chi-kwadrat dla trendu'
 
-## Modele klasyfikacji
+tab_inc_diab <- table(dane$Income, dane$Diabetes_binary)
+dimnames(tab_inc_diab) <- list(`zarobki` = as.character(c(1:8)),
+                                  `cukrzyca` = c('diabetyk', 'zdrowy'))
 
-<tutaj wyniki z testów>
+tab_inc_diab[, c(1, 2)] <- tab_inc_diab[, c(2, 1)]
+
+test_prop_trend_inc_diab <- prop_trend_test(tab_inc_diab)
+
+test_prop_trend_inc_diab %>% 
+  select(p, method) %>% 
+  gt() %>% 
+  cols_label(p = md('**P-value testu**'), method = md('**Rodzaj testu**'))
+```
+
+Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy potwierdzić występowanie trendu spadkowego w liczbie chorujących na cukrzycę wraz ze wzrostem zarobków.
+
+### Cukrzyca ze względu na BMI
+
+```{r levele diabetes_binary}
+levels(dane$Diabetes_binary) <- list("Zdrowy" = 0, "Diabetyk" = 1) 
+```
+
+
+```{r Wykres BMI w zależności od stanu zdrowia}
+gghist <- dane %>%
+  select(Diabetes_binary, BMI) %>%
+ gghistogram(x = "BMI", 
+            fill = "Diabetes_binary", 
+            color = "Diabetes_binary",
+            add = "mean",
+            bins = 100,
+            rug = F,
+            theme = theme_light())
+
+```
+
+```{r Wczytanie wykresu BMI w zależności od stanu zdrowia}
+#| label: fig-bmi
+#| fig-cap: Wykres BMI w zależności od stanu zdrowia
+ggpar(gghist,
+      legend = c(0.8, 0.8),
+      legend.title = "",
+      xlim = c(12,98),
+      palette = c('#007FFF', 'red')) +
+  scale_y_continuous(labels = label_number(scale = 1e-3,
+                                           suffix = ' tys.'), 
+                     breaks = seq(from = 0, to = 25000, 
+                                  by = 2000)) +
+  scale_x_continuous(breaks = seq(from = 12, to = 98, 
+                                  by = 4)) +
+  labs(x = 'BMI', y = 'Liczba respondentów')
+  
+```
+
+Na podstawie powyższego wykresu możemy podejrzewać, że istnieje istotna statystycznie różnica pod względem średniego BMI między grupami osób zdrowych i chorujących na cukrzycę. Aby zweryfikować to podejrzenie, przeprowadzimy test na równość średnich w dwóch populacjach dla następujących hipotez:
+
+$$
+\begin{align}
+H_0: \mu_1-\mu_2=0 \\
+H_1: \mu_1-\mu_2<0
+\end{align}
+$$ gdzie $\mu_1, \mu_2$ oznaczają odpowiednio estymatory średniej wartości BMI dla populacji osób zdrowych oraz chorujących na cukrzycę.
+
+Zaczynamy od testu równości wariancji cechy w dwóch populacjach dla następujących hipotez:
+
+$$
+\begin{align}
+H_0: \sigma^2_1=\sigma^2_2 \\
+H_1: \sigma^2_1\neq\sigma^2_2
+\end{align}
+$$ gdzie $\sigma_1, \sigma_2$ oznaczają odpowiednio estymatory wariancji BMI dla populacji osób zdrowych oraz chorujących na cukrzycę.
+
+
+```{r Podmiana Diabetes_binary na początkowe wartości}
+levels(dane$Diabetes_binary) <- list("0" = "Zdrowy", "1" = "Diabetyk") 
+```
+
+
+```{r Test równości dwóch wariancji - BMI, echo=T}
+#| code-summary: 'Pokaż kod testu równości wariancji'
+
+BMI_diabetyk <- dane %>%
+  filter(Diabetes_binary == '1') %>%
+  pull(var = 'BMI')
+  
+BMI_zdrowy <- dane %>%
+  filter(Diabetes_binary == '0') %>%
+  pull(var = 'BMI')
+
+var.test(BMI_zdrowy, BMI_diabetyk)
+```
+
+Na podstawie p-value przeprowadzonego testu równości wariancji odrzucamy $H_0$ na korzyść $H_1$. Dochodząc do wniosku o różności dwóch wariancji możemy przejść do testu na równość dwóch średnich.
+
+```{r Test równości dwóch średnich - BMI, echo=T}
+#| code-summary: 'Pokaż kod testu równości średnich'
+
+t.test(BMI_zdrowy, BMI_diabetyk, alternative = 'less', var.equal = F)
+```
+
+Na podstawie p-value przeprowadzonego testu równości wariancji odrzucamy $H_0$ na korzyść $H_1$. Dochodzimy zatem do wniosku, że osoby zdrowe mają średnio niższe BMI niż osoby chore na cukrzycę.
+
+## Modele klasyfikacyjne
+
+Problem klasyfikacji pacjentów pod względem zachorowania na cukrzycę wymaga zastosowania klasycznych metod nadzorowanego uczenia maszynowego. Wybrane przez nas rodzaje modeli oraz ich realizacje prezentujemy w poniższych zakładkach. Pierwszym krokiem będzie jednak analiza korelacji występujących między zmiennymi w zbiorze danych, a następnie przygotowanie zbioru do procesu treningu poszczególnych modeli.
+
+### Analiza korelacji między zmiennymi
+
+```{r Analiza korelacji między zmiennymi w zbiorze}
+# Tablica kontyngencji dla zmiennych jakościowych, nie porządkowych, wyliczany jest współczynnik V Cramera
+cramerV_table <- tibble(var1 = character(0),
+                        var2 = character(0),
+                        cv = numeric(0),
+                        dof = numeric(0))
+
+var_combs <- combn(colnames(zmienne_tylko_jakosciowe), m = 2, simplify = F)
+
+for (i in 1:length(var_combs)) {
+  cv <- cramerV(dane[[var_combs[[i]][1]]], dane[[var_combs[[i]][2]]])
+  dof <- min(length(levels(dane[[var_combs[[i]][1]]])) - 1, 
+            length(levels(dane[[var_combs[[i]][2]]])) - 1)
+  cramerV_table[i,] <- list(var_combs[[i]][1], var_combs[[i]][2], cv, dof)
+}
+
+# Tablica współczynnika rang Spearmana dla zmiennych z danym porządkiem oraz ilościowych
+ord_vars_cols <- which(colnames(dane) %in% with_order_vars)
+
+dane_ordered_numeric <- dane[c(ord_vars_cols, num_vars_cols)]
+
+dane_ordered_numeric <- dane_ordered_numeric %>%
+  mutate(across(everything(), as.numeric))
+
+ord_num_names <- colnames(dane_ordered_numeric)
+
+ord_num_combs <- combn(ord_num_names, m = 2, simplify = F)
+
+cor_test_table <- tibble(var1 = character(0),
+                        var2 = character(0),
+                        cor = numeric(0),
+                        pvalue = numeric(0))
+
+for (i in 1:length(ord_num_combs)) {
+  cor.test <- cor.test(pull(dane_ordered_numeric, var = ord_num_combs[[i]][[1]]), 
+                       pull(dane_ordered_numeric, var = ord_num_combs[[i]][[2]]), 
+                       method = 's')
+  
+  cor_test_table[i,] <- list(ord_num_combs[[i]][1], ord_num_combs[[i]][2], cor.test$estimate, cor.test$p.value)
+}
+```
+
+```{r Tabela współczynnika kontyngencji V Cramera dla zmiennych jakościowych (bez porządkowych)}
+#| label: tbl-vcramer
+#| tbl-cap: Tabela współczynnika kontyngencji V Cramera dla zmiennych jakościowych (bez porządkowych)
+#| class: output
+
+cramerV_table %>%
+  select(-dof) %>%
+  arrange(-cv) %>%
+  gt() %>% cols_label(var1 = md('**Zmienna 1**'),
+                      var2 = md('**Zmienna 2**'),
+                      cv = md('**Współczynnik V Cramera**'))
+```
+
+Pośród wszystkich par zmiennych niezależnych jakościowych dostrzegamy brak silnych korelacji. Oznacza to, że nie będzie trzeba uwzględniać współliniowości tych zmiennych przy tworzeniu modeli klasyfikacji. Niepokoić może jednak brak silnej, czy nawet umiarkowanej korelacji zmiennych niezależnych ze zmienną zależną.
+
+```{r Tabela współczynnika korelacji rang Spearmana dla zmiennych porządkowych i ilościowych}
+#| label: tbl-spearman
+#| tbl-cap: Tabela współczynnika korelacji rang Spearmana dla zmiennych porządkowych i ilościowych
+#| class: output
+
+cor_test_table %>%
+  arrange(-cor) %>%
+  gt() %>% cols_label(var1 = md('**Zmienna 1**'),
+                      var2 = md('**Zmienna 2**'),
+                      cor = md('**Współczynnik korelacji Spearmana**'),
+                      pvalue = md('**P-value testu korelacji**'))
+```
+
+Pośród wszystkich par zmiennych niezależnych porządkowych oraz ilościowych dostrzegamy brak silnych korelacji. Oznacza to, że nie będzie trzeba uwzględniać współliniowości tych zmiennych przy tworzeniu modeli klasyfikacji.
+
+### Przygotowanie zbioru danych do utworzenia modeli
+
+Aby przeprowadzić uczenie, a następnie zweryfikować skuteczność modeli, niezbędnym krokiem jest podział zbioru danych na zbiory treningowy i testowy. Zbiór treningowy będzie zawierał 75% wszystkich danych, natomiast zbiór testowy pozostałe 25%. Należy pamiętać, aby przy tworzeniu powyższych zbiorów zachować balans klas zmiennej zależnej taki, jaki występuje w całym zbiorze danych. Celem zachowania powtarzalności przy podziale na zbiory i uczeniu modeli ustawiamy ziarno generatora `2024`.
+
+```{r Przygotowanie zbiorów treningowego i testowego, echo=T}
+#| code-summary: 'Pokaż kod przygotowania zbiorów'
+
+# Zmieniamy poziomy zmiennej objaśniającej na 'yes'(1) i 'no'(0) (konieczne dla poprawnego działania niektórych algorytmów)
+levels(dane$Diabetes_binary) <- c('no', 'yes')
+
+# Podział danych na zbiór treningowy i testowy
+set.seed(2024)
+
+trainIndex <- createDataPartition(dane$Diabetes_binary,
+                                  p = .75,
+                                  list = FALSE)
+
+dane.train <- dane[trainIndex,]
+dane.test <- dane[-trainIndex,]
+```
+
+### Walidacja krzyżowa
+
+Jeżeli algorytm uwzględnia taką możliwość przeprowadzamy w trakcie uczenia proces walidacji krzyżowej, co powinno zapewnić jeszcze lepszą skuteczność modeli i dodatkowo uodpornić je na zbytnie dopasowanie do danych treningowych. Spośród czterech wybranych przez nas modeli jedynie model drzewa decyzji nie pozwala na ten dodatkowy krok.
+
+### Realizacje poszczególnych modeli
 
 ::: panel-tabset
+### Drzewo decyzyjne
+
+Model drzewa decyzyjnego jest najprostszym spośród czterech wybranych. Przygotowanie danych wymaga jedynie jednego dodatkowego kroku jakim jest próbkowanie w dół (downsampling) na zbiorze treningowym. Jest to krok niezbędny dla zbioru, w którym klasy zmiennej zależnej są niezbalansowane.
+
+```{r Przygotowanie zbioru treningowego do modelu drzewa decyzyjnego, echo=T}
+#| code-summary: 'Pokaż kod przygotowania zbioru treningowego'
+
+# Downsampling na zbiorze treningowym
+dane.train.tree <- downSample(x = dane.train[,-1], y = dane.train$Diabetes_binary, yname = 'Diabetes_binary')
+```
+
+Najtrudniejszym etapem pracy z modelem drzewa decyzyjnego jest ręczne dopasowanie parametrów celem uzyskania możliwie najlepszej predykcji.
+
+```{r Model drzewa decyzyjnego, echo=T}
+#| code-summary: 'Pokaż kod modelu drzewa decyzyjnego'
+
+# Utworzenie modelu drzewa decyzyjnego
+drzewo <- rpart(Diabetes_binary ~ ., data = dane.train.tree, method = 'class', control = rpart.control(minsplit = 7500, cp = 0.001))
+```
+
+Wizualizacja uzyskanego drzewa decyzyjnego.
+
+```{r}
+fancyRpartPlot(drzewo, caption = '')
+```
+
+Ostatnim krokiem jest wykonanie predykcji na zbiorze testowym i sprawdzenie skuteczności modelu. Próg odcięcia (threshold) dla predykcji został w tym wypadku znaleziony ręcznie.
+
+```{r Predykcja modelu drzewa decyzyjnego na zbiorze testowym, echo=T}
+#| code-summary: 'Pokaż kod predykcji na zbiorze testowym'
+
+# Predykcja na zbiorze testowym
+predykcja <- predict(drzewo, dane.test)
+predykcja <- ifelse(predykcja[,1]>=0.49, 'no', 'yes')
+
+conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
+                                    predictions = as.factor(predykcja),
+                                    positive = 'yes')
+
+cvms::plot_confusion_matrix(conf_mat,
+                            counts_on_top = T,
+                            add_normalized = F,
+                            rotate_y_text = F,
+                            add_row_percentages = F,
+                            font_counts = list(size = 10),
+                            font_col_percentages = list(size = 8))
+```
+
 ### Regresja logistyczna
 
-### Drzewo decyzyjne
+Aby poprawnie wykonać model regresji logistycznej musimy wykonać kilka dodatkowych kroków w celu odpowiedniego przygotowania zbiorów treningowego i testowego dla tego modelu.
+
+```{r Przygotowanie zbiorów treningowego i testowego-2, echo=T}
+#| code-summary: 'Pokaż kod przygotowania zbioru'
+
+# Przygotowanie zbioru treningowego
+
+# Przekształcamy zmienne kategoryczne
+dummyModel <- dummyVars(Diabetes_binary ~ ., data = dane.train, fullRank = T)
+dane.train.X <- as.data.frame(predict(dummyModel, dane.train))
+
+# Przekształcamy zmienne numeryczne na zakres 0-1
+rangeModel <- preProcess(dane.train.X, method = 'range')
+dane.train.X <- predict(rangeModel, dane.train.X)
+
+# Łączymy zmienne zależną i niezależne w zbiorze treningowym
+dane.train <- cbind(Diabetes_binary = dane.train$Diabetes_binary, dane.train.X)
+
+# Przygotowanie zbioru testowego
+
+# Przekształcamy zmienne kategoryczne
+dummyModelTest <- dummyVars(Diabetes_binary ~ ., data = dane.test, fullRank = T)
+dane.test.X <- as.data.frame(predict(dummyModelTest, dane.test))
+
+# Przekształcamy zmienne numeryczne na zakres 0-1
+rangeModelTest <- preProcess(dane.test.X, method = 'range')
+dane.test.X <- predict(rangeModelTest, dane.test.X)
+
+# Łączymy zmienną zależną i niezależne w zbiorze testowym
+dane.test <- cbind(Diabetes_binary = dane.test$Diabetes_binary, dane.test.X)
+```
+
+Skorzystamy najpierw z algorytmu automatycznej selekcji predyktorów, pozwoli to na wybór odpowiedniego podzbioru zmiennych niezależnych celem uniknięcia niedouczenia lub przeuczenia modelu. Dzięki temu będziemy mogli także porównać modele pod względem zmiennych, które były wybrane przez pozostałe algorytmy jako istotne.
+
+```{r Algorytm selekcji predyktorów dla regresji logistycznej, echo=T, eval=F}
+#| code-summary: 'Pokaż kod algorytmu selekcji'
+
+control <- rfeControl(functions = rfFuncs,
+                      method = "repeatedcv",
+                      repeats = 5,
+                      number = 10)
+
+x <- dane.train[-1]
+
+y <- dane.train$Diabetes_binary
+
+# UWAGA! Zanim skorzystasz z możliwości zrównoleglenia obliczeń, sprawdź liczbę dostępnych rdzeni fizycznych swojego procesora za pomocą `parallel::detectCores(logical = F)` i odejmij 1 lub 2 z nich.
+cl <- makeCluster(3, type = 'SOCK') 
+
+registerDoSNOW(cl)
+
+start_rfe <- Sys.time()
+
+rfe_result <- rfe(x = x, 
+                   y = y, 
+                   sizes = c(1:5, 10, 15),
+                   rfeControl = control)
+
+koniec_rfe <- Sys.time()
+
+# Zawsze pamiętaj o zatrzymaniu utworzonych klastrów
+stopCluster(cl)
+
+# Sprawdzamy, które jaki podzbiór zmiennych wybrał algorytm
+predictors(rfe_result)
+```
+
+W procesie trenowania modelu skorzystamy z podzbioru 5 zmiennych, które algorytm wybrał jako najlepsze.
+
+```{r Trening modelu regresji logistycznej, eval=F, echo=T}
+#| code-summary: 'Pokaż kod treningu modelu regresji logistycznej'
+
+zmienne <- c('Diabetes_binary', 'BMI', 'GenHlth.L', 'HighChol.1', 'HeartDiseaseorAttack.1', 'HighBP.1')
+dane.train.glm <- dane.train[, zmienne]
+
+fitControl <-  trainControl(method = "repeatedcv", 
+                            number = 10, 
+                            repeats = 20, 
+                            summaryFunction = twoClassSummary,
+                            classProbs = TRUE, 
+                            savePredictions = T, 
+                            sampling = 'down')
+
+start_glm <- Sys.time()
+
+cl <- makeCluster(6, type = 'SOCK')
+registerDoSNOW(cl)
+
+glm_model <- train(Diabetes_binary ~ ., 
+                   data = dane.train.glm, 
+                   family = 'binomial', 
+                   method = 'glm', 
+                   trControl = fitControl)
+
+stopCluster(cl)
+koniec_glm <- Sys.time()
+```
+
+Następnym krokiem jest odpowiednie wyznaczenie progu odcięcia (threshold) dla predykcji wykonywanych przez model. Zamiast wykonywać ten proces ręcznie możemy skorzystać z przygotowanej do tego funkcji `threshold` z pakietu `caret`.
+
+```{r Thresholder dla regresji logistycznej, eval=F, echo=T}
+#| code-summary: 'Pokaż kod'
+
+probs <- seq(.01, .99, by = .01)
+
+start_ths <- Sys.time()
+
+ths <- thresholder(glm_model,
+                   threshold = probs,
+                   final = TRUE,
+                   statistics = "all")
+
+koniec_ths <- Sys.time()
+```
+
+```{r Wczytanie gotowego modelu regresji logistycznej}
+glm_model <- readRDS('Modele/glm_reglog_model.rds')
+```
+
+Specyfika problemu dla tego zbioru danych wymaga znalezienia balansu między poprawnie zaklasyfikowanymi chorymi oraz zdrowymi pacjentami, zatem optymalny próg odcięcia zapewni balans między metrykami czułości i swoistości (Sensitivity i Specificity).
+
+Po wybraniu optymalnego progu możemy przystąpić do testu modelu klasyfikacji.
+
+```{r Predykcja modelu regresji logistycznej na zbiorze testowym, echo=T}
+#| code-summary: 'Pokaż kod predykcji na zbiorze testowym'
+
+predykcja <- predict(glm_model, dane.test, type = 'prob')
+
+#0.5 wybieramy z thresholdera, balansujemy sensitivity i specificity
+predykcja <- ifelse(predykcja[,1] >= 0.5, 'no', 'yes') 
+
+
+conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
+                                    predictions = as.factor(predykcja),
+                                    positive = 'yes')
+
+cvms::plot_confusion_matrix(conf_mat,
+                            counts_on_top = T,
+                            add_normalized = F,
+                            rotate_y_text = F,
+                            add_row_percentages = F,
+                            font_counts = list(size = 9),
+                            font_col_percentages = list(size = 7))
+```
 
 ### Las losowy
 
-### XGBoost
+Las losowy składa się z wielu drzew decyzyjnych. Każde z tych drzew jest trenowane na losowym podzbiorze danych treningowych, a także na losowym podzbiorze cech. Proces ten pomaga w zminimalizowaniu ryzyka nadmiernego dopasowania modelu do konkretnego zestawu danych. Ostateczna predykcja lasu losowego jest wynikiem predykcji wykonanej przez większość modeli drzew decyzyjnych.
+
+Model lasu losowego nie wymaga dodatkowego przygotowania zbioru danych, można skorzystać ze wcześniej przygotowanych zbiorów - dla drzewa decyzyjnego (z pominięciem próbkowania w dół - las losowy realizuje je samodzielnie) i dla regresji logistycznej, różnica między uzyskanymi wynikami będzie marginalna, ponieważ zbiory różnią się jedynie na poziomie reprezentacji cech, a zawierają te same podzbiory obserwacji.
+
+W tym wypadku posłużymy się zbiorami treningowym i testowym, które zostały użyte do treningu i testu modelu regresji logistycznej. W związku z tym możemy przejść bezpośrednio do treningu modelu lasu losowego.
+
+```{r Trening modelu lasu losowego, eval=F, echo=T}
+#| code-summary: 'Pokaż kod treningu modelu lasu losowego'
+
+start <- Sys.time()
+
+cl <- makeCluster(6, type = 'SOCK')
+
+registerDoSNOW(cl)
+
+twoClassControl <- trainControl(
+  method = 'repeatedcv',
+  number = 5,
+  repeats = 5,
+  savePredictions = 'final',
+  classProbs = T,
+  summaryFunction = twoClassSummary,
+  sampling = 'down',
+  allowParallel = T)
+
+rf_bin <- train(Diabetes_binary ~ ., 
+                data = dane.train, 
+                method = 'rf', 
+                metric = 'ROC', 
+                trControl = twoClassControl, 
+                tuneLength = 10)
+
+stopCluster(cl)
+koniec <- Sys.time()
+```
+
+Podobnie jak w przypadku modelu regresji logistycznej posłużymy się funkcją `threshold` z pakietu `caret` celem znalezienia optymalnego progu odcięcia dla predykcji z modelu.
+
+```{r Thresholder dla lasu losowego, eval=F, echo=T}
+#| code-summary: 'Pokaż kod'
+
+probs <- seq(.01, .99, by = .01)
+
+start_ths <- Sys.time()
+
+ths <- thresholder(rf_bin,
+                   threshold = probs,
+                   final = TRUE,
+                   statistics = "all")
+
+koniec_ths <- Sys.time()
+```
+
+```{r Wczytanie gotowego modelu lasu losowego}
+#rf_bin <- readRDS('Modele/rf_model.rds')
+```
+
+Z odpowiednio dobranym progiem odcięcia możemy przystąpić do przeprowadzenia predykcji na zbiorze testowym i zweryfikowania skuteczności modelu.
+
+```{r}
+
+```
+
+### GBM
+
+```{r Trening modelu GBM, eval=F, echo=T}
+#| code-summary: 'Pokaż kod treningu modelu GBM'
+
+start <- Sys.time()
+ctrl_train <- trainControl(method = "repeatedcv",
+                           number = 10, 
+                           repeats = 5,
+                           returnResamp = 'none',
+                           summaryFunction = twoClassSummary,
+                           classProbs = T,
+                           savePredictions = T,
+                           verboseIter = F,
+                           allowParallel = T,
+                           sampling = 'down')
+
+gbmGrid <-  expand.grid(interaction.depth = 6,
+                        n.trees = 500,                                      
+                        shrinkage = 0.01,                                   
+                        n.minobsinnode = 10)
+
+cl <- makeCluster(6, type = 'SOCK')
+registerDoSNOW(cl)
+
+mod_GBM <- train(Diabetes_binary ~ ., 
+             data = dane.train,
+             method = 'gbm',
+             trControl = ctrl_train,
+             tuneGrid = gbmGrid,
+             metric = 'ROC')
+
+stopCluster(cl)
+koniec <- Sys.time()
+```
+
+```{r Thresholder dla GBM, eval=F, echo=T}
+#| code-summary: 'Pokaż kod'
+
+probs <- seq(.01, 0.99, by = 0.01)
+
+start_ths <- Sys.time()
+
+ths <- thresholder(mod_GBM,
+                   threshold = probs,
+                   final = TRUE,
+                   statistics = "all")
+
+koniec_ths <- Sys.time()
+```
+
+```{r}
+
+```
 :::
 
 ## Wnioski
