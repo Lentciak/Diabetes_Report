@@ -56,7 +56,7 @@ library(scales)
 library(rstatix)
 library(rpart)
 library(rattle)
-library(DT)
+library(car)
 library(gt)
 library(summarytools)
 library(ggplot2)
@@ -985,9 +985,13 @@ Jeżeli algorytm uwzględnia taką możliwość przeprowadzamy w trakcie uczenia
 ### Realizacje poszczególnych modeli
 
 ::: panel-tabset
-#### Drzewo decyzyjne
+### Drzewo decyzyjne
+
+#### O modelu
 
 Model drzewa decyzyjnego jest najprostszym spośród czterech wybranych. Model drzewa decyzyjnego rozpoczyna się od węzła nazywanego 'korzeniem', w którym znajduje się cały zbiór danych. W każdym z węzłów algorytm drzewa wybiera cechę, która pozwala jak najlepiej podzielić zbiór zawierający się w danym węźle względem zmiennej zależnej.
+
+#### Przygotowanie danych
 
 Przygotowanie danych wymaga jedynie jednego dodatkowego kroku jakim jest próbkowanie w dół (downsampling) na zbiorze treningowym. Jest to krok niezbędny dla zbioru, w którym klasy zmiennej zależnej są niezbalansowane.
 
@@ -998,6 +1002,8 @@ Przygotowanie danych wymaga jedynie jednego dodatkowego kroku jakim jest próbko
 dane.train.tree <- downSample(x = dane.train[,-1], y = dane.train$Diabetes_binary, yname = 'Diabetes_binary')
 ```
 
+#### Utworzenie oraz trening modelu
+
 Najtrudniejszym etapem pracy z modelem drzewa decyzyjnego jest ręczne dopasowanie parametrów celem uzyskania możliwie najlepszej predykcji.
 
 ```{r Model drzewa decyzyjnego, echo=T}
@@ -1007,13 +1013,13 @@ Najtrudniejszym etapem pracy z modelem drzewa decyzyjnego jest ręczne dopasowan
 drzewo <- rpart(Diabetes_binary ~ ., data = dane.train.tree, method = 'class', control = rpart.control(minsplit = 7500, cp = 0.001))
 ```
 
-Wizualizacja uzyskanego drzewa decyzyjnego.
+#### Wizualizacja uzyskanego drzewa decyzyjnego
 
 ```{r Wizualizacja drzewa decyzyjnego}
 fancyRpartPlot(drzewo, caption = '')
 ```
 
-Ostatnim krokiem jest wykonanie predykcji na zbiorze testowym i sprawdzenie skuteczności modelu.
+#### Predykcja na zbiorze testowym oraz ocena skuteczności modelu
 
 Specyfika problemu dla tego zbioru danych wymaga znalezienia balansu między poprawnie zaklasyfikowanymi chorymi oraz zdrowymi pacjentami, zatem optymalny próg odcięcia zapewni balans między metrykami czułości i swoistości (Sensitivity i Specificity).
 
@@ -1050,9 +1056,13 @@ cvms::plot_confusion_matrix(conf_mat,
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
-#### Las losowy
+### Las losowy
+
+#### O modelu
 
 Las losowy składa się z wielu drzew decyzyjnych. Każde z tych drzew jest trenowane na losowym podzbiorze danych treningowych, a także na losowym podzbiorze cech. Proces ten pomaga w zminimalizowaniu ryzyka nadmiernego dopasowania modelu do konkretnego zestawu danych. Ostateczna predykcja lasu losowego jest wynikiem predykcji wykonanej przez większość modeli drzew decyzyjnych.
+
+#### Utworzenie oraz trening modelu
 
 Model lasu losowego nie wymaga dodatkowego przygotowania zbioru danych, można skorzystać ze wcześniej przygotowanego zbioru dla drzewa decyzyjnego (z pominięciem próbkowania w dół - las losowy realizuje je samodzielnie). W związku z tym możemy przejść bezpośrednio do treningu modelu lasu losowego.
 
@@ -1085,6 +1095,8 @@ rf_bin <- train(Diabetes_binary ~ .,
 stopCluster(cl)
 ```
 
+#### Wyznaczenie progu odcięcia
+
 Następnym krokiem jest odpowiednie wyznaczenie progu odcięcia (threshold) dla predykcji wykonywanych przez model. Zamiast wykonywać ten proces ręcznie możemy skorzystać z przygotowanej do tego funkcji `threshold` z pakietu `caret`.
 
 ```{r Thresholder dla lasu losowego, eval=F, echo=T}
@@ -1101,6 +1113,8 @@ ths <- thresholder(rf_bin,
 ```{r Wczytanie gotowego modelu lasu losowego}
 rf_bin <- readRDS('Modele/rf_model.rds')
 ```
+
+#### Predykcja na zbiorze testowym oraz ocena skuteczności modelu
 
 Specyfika problemu dla tego zbioru danych wymaga znalezienia balansu między poprawnie zaklasyfikowanymi chorymi oraz zdrowymi pacjentami, zatem optymalny próg odcięcia zapewni balans między metrykami czułości i swoistości (Sensitivity i Specificity).
 
@@ -1139,9 +1153,13 @@ cvms::plot_confusion_matrix(conf_mat,
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
-#### GBM
+### GBM
+
+#### O modelu
 
 Gradient Boosting Machine (model wzmacniania gradientowego) jest modelem podobnym w założeniach do modelu lasu losowego. Ostateczna predykcja jest również wynikiem współdziałania wielu drzew decyzyjnych, jednak w przeciwieństwie do lasu losowego w tym modelu drzewa budowane są jedno po drugim, a zadaniem każdego następnego drzewa jest korekcja błędnych decyzji podjętych przez poprzednika.
+
+#### Utworzenie oraz trening modelu
 
 Podobnie jak w przypadku modelu lasu losowego nie musimy dodatkowo przygotowywać zbiorów treningowego i testowego, możemy od razu przystąpić do procesu uczenia.
 
@@ -1177,6 +1195,10 @@ mod_GBM <- train(Diabetes_binary ~ .,
 stopCluster(cl)
 ```
 
+#### Wyznaczenie progu odcięcia
+
+Następnym krokiem jest odpowiednie wyznaczenie progu odcięcia (threshold) dla predykcji wykonywanych przez model. Zamiast wykonywać ten proces ręcznie możemy skorzystać z przygotowanej do tego funkcji `threshold` z pakietu `caret`.
+
 ```{r Thresholder dla GBM, eval=F, echo=T}
 #| code-summary: 'Pokaż kod'
 
@@ -1188,11 +1210,11 @@ ths <- thresholder(mod_GBM,
                    statistics = "all")
 ```
 
-Następnym krokiem jest odpowiednie wyznaczenie progu odcięcia (threshold) dla predykcji wykonywanych przez model. Zamiast wykonywać ten proces ręcznie możemy skorzystać z przygotowanej do tego funkcji `threshold` z pakietu `caret`.
-
 ```{r Wczytanie gotowego modelu GBM}
 mod_GBM <- readRDS('Modele/gbm_model.rds')
 ```
+
+#### Predykcja na zbiorze testowym oraz ocena skuteczności modelu
 
 Specyfika problemu dla tego zbioru danych wymaga znalezienia balansu między poprawnie zaklasyfikowanymi chorymi oraz zdrowymi pacjentami, zatem optymalny próg odcięcia zapewni balans między metrykami czułości i swoistości (Sensitivity i Specificity).
 
@@ -1230,11 +1252,15 @@ cvms::plot_confusion_matrix(conf_mat,
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
-#### Regresja logistyczna
+### Regresja logistyczna
 
-Model regresji logistycznej to uogólniony model liniowy, który możemy stosować gdy zmienna zależna ma charakter dychotomiczny. Regresja logistyczna pozwala na obliczenie prawdopodobieństwa sukcesu, jednak jest ono wyrażone poprzez logarytm ilorazu szans (stosunek prawdopodobieństwa sukcesu do prawdopodobieństwa porażki).
+#### O modelu
 
-Aby poprawnie wykonać model regresji logistycznej musimy wykonać kilka dodatkowych kroków w celu odpowiedniego przygotowania zbiorów treningowego i testowego dla tego modelu.
+Model regresji logistycznej to uogólniony model liniowy, który możemy stosować gdy zmienna zależna ma charakter dychotomiczny. Model ten opiera się na logarytmie naturalnym ilorazu szans zaistnienia danego zdarzenia, który jest stosunkiem prawdopodobieństw jego wystąpienia i niewystąpienia. Predykcja z modelu regresji logistycznej zwraca prawdopodobieństwo przynależności każdej z obserwacji do obu klas zmiennej zależnej.
+
+#### Przygotowanie danych
+
+Aby poprawnie wykonać model regresji logistycznej musimy wykonać kilka dodatkowych kroków w celu odpowiedniego przygotowania zbiorów treningowego i testowego dla modelu. Dane ze zmiennych typu ilościowego muszą zostać przeskalowane tak, by zawierały się w zakresie od zera do jedności, natomiast zmienne jakościowe i porządkowe są kodowane na za pomocą nowych zmiennych, stosownie do liczby klas w danej zmiennej pomniejszonej o jeden.
 
 ```{r Przygotowanie zbiorów treningowego i testowego-2, echo=T}
 #| code-summary: 'Pokaż kod przygotowania zbioru'
@@ -1266,7 +1292,9 @@ dane.test.X <- predict(rangeModelTest, dane.test.X)
 dane.test <- cbind(Diabetes_binary = dane.test$Diabetes_binary, dane.test.X)
 ```
 
-Skorzystamy najpierw z algorytmu automatycznej selekcji predyktorów, pozwoli to na wybór odpowiedniego podzbioru zmiennych niezależnych celem uniknięcia niedouczenia lub przeuczenia modelu.
+#### Wybór predyktorów dla modelu
+
+Skorzystamy tu z algorytmu automatycznej selekcji predyktorów, pozwoli to na wybór odpowiedniego podzbioru zmiennych niezależnych celem uniknięcia niedouczenia lub przeuczenia modelu.
 
 ```{r Algorytm selekcji predyktorów dla regresji logistycznej, echo=T, eval=F}
 #| code-summary: 'Pokaż kod algorytmu selekcji'
@@ -1294,6 +1322,8 @@ stopCluster(cl)
 # Sprawdzamy, które jaki podzbiór zmiennych wybrał algorytm
 predictors(rfe_result)
 ```
+
+#### Utworzenie oraz trening modelu
 
 W procesie trenowania modelu skorzystamy z podzbioru 5 zmiennych, które algorytm wybrał jako najlepsze.
 
@@ -1323,6 +1353,51 @@ glm_model <- train(Diabetes_binary ~ .,
 stopCluster(cl)
 ```
 
+Mając zbudowany model możemy przystąpić do sprawdzenia, czy spełnia on założenia dane dla tego typu modeli.
+
+#### Weryfikacja założeń modelu regresji logistycznej
+
+##### Zmienna zależna ma charakter binarny
+
+Zmienna zależna `Diabietes_binary` przyjmuje jedynie wartości 0 oraz 1, zatem założenie jest spełnione.
+
+##### Obserwacje w zbiorze danych są niezależne
+
+W zbiorze danych nie występują duplikaty, a każda z obserwacji odpowiada unikalnemu respondentowi, zatem założenie jest spełnione.
+
+```{r Wczytanie gotowego modelu regresji logistycznej}
+glm_model <- readRDS('Modele/glm_reglog_model.rds')
+```
+
+##### Między zmiennymi objaśniającymi nie występuje silna korelacja lub współliniowość
+
+Do sprawdzenia tego założenia wykorzystamy współczynnik inflacji wariancji.
+
+```{r Sprawdzamy VIF dla modelu logistycznej}
+car::vif(glm_model$finalModel) %>% t() %>% as_tibble() %>% gt::gt()
+```
+
+Wartość współczynnika jest bliska jeden dla każdej zmiennej zależnej, zatem założenie jest spełnione.
+
+##### Próba badawcza jest dostatecznie duża
+
+Zbiór treningowy zawiera `r nrow(dane.train)` obserwacji, co spełnia założenie o dostatecznej wielkości próby.
+
+##### W zbiorze danych nie ma obserwacji odstających
+
+Zmienna BMI jest jedyną zmienną ilościową w zbiorze uczącym, dla której możemy zbadać obecność wartości odstających.
+
+```{r Identyfikacja obserwacji odstających - BMI}
+outliers_BMI <- dane %>%
+  select(BMI) %>%
+  rstatix::identify_outliers(variable = 'BMI') %>%
+  nrow()
+```
+
+Zmienna BMI ma `r outliers_BMI` wartości odstających, co przekłada się na `r round(outliers_BMI/nrow(dane.train), 2)`% jej wartości w zbiorze testowym. Jest to bardzo niewielka ilość, dlatego pominiemy ich istotność przy treningu modelu. Kolejnym powodem tej decyzji jest konsensus badaczy pod względem nieusuwania obserwacji odstających ze zbiorów danych o charakterze medycznym tak długo, jak zawarte w nich dane mają rzeczywisty sens, a nie są błędnymi wartościami.
+
+#### Wyznaczenie progu odcięcia
+
 Następnym krokiem jest odpowiednie wyznaczenie progu odcięcia (threshold) dla predykcji wykonywanych przez model. Zamiast wykonywać ten proces ręcznie możemy skorzystać z przygotowanej do tego funkcji `threshold` z pakietu `caret`.
 
 ```{r Thresholder dla regresji logistycznej, eval=F, echo=T}
@@ -1336,9 +1411,7 @@ ths <- thresholder(glm_model,
                    statistics = "all")
 ```
 
-```{r Wczytanie gotowego modelu regresji logistycznej}
-glm_model <- readRDS('Modele/glm_reglog_model.rds')
-```
+#### Predykcja na zbiorze testowym oraz ocena skuteczności modelu
 
 Specyfika problemu dla tego zbioru danych wymaga znalezienia balansu między poprawnie zaklasyfikowanymi chorymi oraz zdrowymi pacjentami, zatem optymalny próg odcięcia zapewni balans między metrykami czułości i swoistości (Sensitivity i Specificity).
 
