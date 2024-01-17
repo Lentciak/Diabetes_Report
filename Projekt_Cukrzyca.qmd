@@ -191,11 +191,15 @@ Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który
 ::: panel-tabset
 ### Opis zmiennych
 
+#### Zmienna zależna
+
 **Diabetes_binary** - zmienna jakościowa, przyjmuje wartości:
 
 -   0 - pacjent zdrowy,
 
 -   1 - pacjent chory na cukrzycę
+
+#### Zmienne niezależne - jakościowe
 
 **HighBP** - zmienna jakościowa, przyjmuje wartości:
 
@@ -209,13 +213,17 @@ Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który
 
 -   1 - u pacjenta stwierdzono wysoki poziom cholesterolu
 
+**Sex** - zmienna jakościowa, określa płeć pacjenta, przyjmuje wartości:
+
+-   0 - kobieta,
+
+-   1 - mężczyzna
+
 **CholCheck** - zmienna jakościowa, przyjmuje wartości:
 
 -   0 - pacjent w ciągu ostatnich 5 lat nie sprawdzał poziomu cholesterolu,
 
 -   1 - pacjent w ciągu ostatnich 5 lat sprawdzał poziom cholesterolu
-
-**BMI** - zmienna ilościowa, wskaźnik masy ciała danego pacjenta
 
 **Smoker** - zmienna jakościowa, przyjmuje wartości:
 
@@ -234,6 +242,12 @@ Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który
 -   0 - pacjent zdrowy,
 
 -   1 - pacjent przebył w przeszłości zawał serca/choruje na niedokrwienność serca
+
+**DiffWalk** - zmienna jakościowa, przyjmuje wartości:
+
+-   0 - pacjent zdrowy,
+
+-   1 - pacjent ma poważne problemy z chodzeniem lub wchodzeniem po schodach
 
 **PhysActivity** - zmienna jakościowa, przyjmuje wartości:
 
@@ -263,25 +277,19 @@ Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który
 
 **NoDocbcCost** - zmienna jakościowa, przyjmuje wartości: 0 lub 1, jeżeli w ciągu ostatnich 12 miesięcy pacjent zrezygnował z wizyty u lekarza ze względu na jej wysoką cenę 
 
-**GenHlth** - zmienna jakościowa-porządkowa, odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 5 (słaby) do 1 (doskonały)
+#### Zmienne niezależne - ilościowe
+
+**BMI** - zmienna ilościowa, wskaźnik masy ciała danego pacjenta
 
 **MentHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie psychiczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuł się dobrze pod względem psychicznym (podwyższony stres, stany depresyjne/depresja, problemy związane z emocjami) 
 
 **PhysHlth** - zmienna ilościowa, wartościami są odpowiedzi na pytanie o zdrowie fizyczne pacjenta - przez ile dni w ciągu ostatnich 30 dni pacjent nie czuł się dobrze pod względem fizycznym (schorzenia i urazy) 
 
-**DiffWalk** - zmienna jakościowa, przyjmuje wartości:
+#### Zmienne niezależne - porządkowe
 
--   0 - pacjent zdrowy,
+**GenHlth** - zmienna porządkowa, odpowiadająca na pytanie o ogólny (subiektywny) stan zdrowia pacjenta, przyjmuje wartości całkowite od 1 (doskonały) do 5 (zły)
 
--   1 - pacjent ma poważne problemy z chodzeniem lub wchodzeniem po schodach
-
-**Sex** - zmienna jakościowa, określa płeć pacjenta, przyjmuje wartości:
-
--   0 - kobieta,
-
--   1 - mężczyzna
-
-**Age** - zmienna jakościowa-porządkowa określająca wiek pacjenta, przyjmuje wartości:
+**Age** - zmienna porządkowa określająca wiek pacjenta, przyjmuje wartości:
 
 -   1 - 18-24 lata,
 
@@ -311,7 +319,7 @@ Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który
 
 **Education** - zmienna jakościowa-porządkowa określająca poziom wykształcenia pacjenta, przyjmuje wartości:
 
--   1 - pacjent bez wykształcenia,
+-   1 - brak wykształcenia,
 
 -   2 - klasy 1 do 8 (Elementary),
 
@@ -319,7 +327,7 @@ Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który
 
 -   4 - klasa 12 lub GED (High School),
 
--   5 - rok 1 do 3 (College) ,
+-   5 - rok 1 do 3 (College),
 
 -   6 - rok 4 (College)
 
@@ -376,6 +384,7 @@ Celem pobocznym jest eksploracyjna analiza zbioru danych i przeprowadzenie test�
 #| label: fig-wiek_diab
 #| fig-cap: Liczba respondentów zdrowych i diabetyków w grupach wiekowych
 theme_set(theme_light())
+
 zmienne_jakosciowe %>%
   select(Diabetes_binary, Age) %>%
   group_by(Age, Diabetes_binary) %>%
@@ -436,19 +445,16 @@ Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy p
 
 #### Cukrzyca(%)
 
-```{r Stworzenie zmienne_jakosciowe_z_freq}
-zmienne_jakosciowe_z_freq <- zmienne_jakosciowe %>%
-group_by(Age, Diabetes_binary) %>%
-  summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-```
-
 ```{r Wykres odsetek respondentów zdrowych i diabetyków w grupach wiekowych}
 #| label: fig-wiek_diab_proc
 #| fig-cap: Odsetek respondentów zdrowych i diabetyków w grupach wiekowych
 theme_set(theme_light())
-zmienne_jakosciowe_z_freq %>%
-  select(Diabetes_binary, Age, freq) %>%
+
+zmienne_jakosciowe %>%
+group_by(Age, Diabetes_binary) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n)) %>%
+  select(-n) %>%
   group_by(Age, Diabetes_binary) %>%
   ggplot(aes(x= Age, y=freq, fill = Diabetes_binary)) + 
   geom_col(position = 'dodge') + 
@@ -510,6 +516,7 @@ Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy p
 #| label: fig-wiek_cis
 #| fig-cap: Liczba respondentów zdrowych i z nadciśnieniem w grupach wiekowych
 theme_set(theme_light())
+
 zmienne_jakosciowe %>%
   select(HighBP, Age) %>%
   group_by(Age, HighBP) %>%
@@ -570,19 +577,16 @@ Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy p
 
 #### Ciśnienie(%)
 
-```{r Stworzenie zmienne_jakosciowe_z_freq2}
-zmienne_jakosciowe_z_freq2 <- zmienne_jakosciowe %>%
-group_by(Age, HighBP) %>%
-  summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-```
-
 ```{r Wykres odsetek respondentów zdrowych i z nadciśnieniem w grupach wiekowych}
 #| label: fig-wiek_cis_proc
 #| fig-cap: Odsetek respondentów zdrowych i z nadciśnieniem w grupach wiekowych
 theme_set(theme_light())
-zmienne_jakosciowe_z_freq2 %>%
-  select(HighBP, Age, freq) %>%
+
+zmienne_jakosciowe %>%
+group_by(Age, HighBP) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n)) %>%
+  select(-n) %>%
   group_by(Age, HighBP) %>%
   ggplot(aes(x= Age, y=freq, fill = HighBP)) + 
   geom_col(position = 'dodge') + 
@@ -648,6 +652,7 @@ Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy p
 #| label: fig-cis_diab
 #| fig-cap: Liczba respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem
 theme_set(theme_light())
+
 zmienne_jakosciowe %>%
   select(Diabetes_binary, HighBP) %>%
   group_by(Diabetes_binary, HighBP) %>%
@@ -670,18 +675,15 @@ zmienne_jakosciowe %>%
 
 #### Cukrzyca(%)
 
-```{r Stworzenie zmienne_jakosciowe_z_freq3}
-zmienne_jakosciowe_z_freq3 <- zmienne_jakosciowe %>%
-group_by(Diabetes_binary, HighBP) %>%
-  summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-```
-
 ```{r Wykres odsetek respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem}
 #| label: fig-cis_diab_proc
 #| fig-cap: Odsetek respondentów w podziale na ciśnienie krwi w normie lub z nadciśnieniem względem bycia diabetykiem
 theme_set(theme_light())
-zmienne_jakosciowe_z_freq3 %>%
+
+zmienne_jakosciowe %>%
+group_by(Diabetes_binary, HighBP) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n)) %>%
   select(Diabetes_binary, HighBP, freq) %>%
   group_by(Diabetes_binary, HighBP) %>%
   ggplot(aes(Diabetes_binary, freq, fill = HighBP)) + 
@@ -726,18 +728,15 @@ Na podstawie p-value przeprowadzonego testu proporcji odrzucamy $H_0$ na korzyś
 
 ### Cukrzyca ze względu na zarobki
 
-```{r Stworzenie zmienne_jakosciowe_z_freq4}
-zmienne_jakosciowe_z_freq4 <- zmienne_jakosciowe %>%
-group_by(Income, Diabetes_binary) %>%
-  summarise(n = n()) %>%
-  mutate(freq = n / sum(n))
-```
-
 ```{r Wykres zarobków w zależności od stanu zdrowia}
 #| label: fig-zarobki
 #| fig-cap: Odsetek respondentów zdrowych i chorych na cukrzycę w przedziałach zarobkowych
 theme_set(theme_light())
-zmienne_jakosciowe_z_freq4 %>%
+
+zmienne_jakosciowe %>%
+group_by(Income, Diabetes_binary) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n)) %>%
   select(Diabetes_binary, Income, freq) %>%
   group_by(Diabetes_binary, Income) %>%
   ggplot(aes(x= Income, y= freq, fill = Diabetes_binary)) + 
@@ -793,10 +792,6 @@ Na podstawie p-value \< 0.05 odrzucamy $H_0$ na korzyść $H_1$, zatem możemy p
 
 ### Cukrzyca ze względu na BMI
 
-```{r levele diabetes_binary}
-levels(dane$Diabetes_binary) <- list("Zdrowy" = 0, "Diabetyk" = 1) 
-```
-
 ```{r Wykres BMI w zależności od stanu zdrowia}
 gghist <- dane %>%
   select(Diabetes_binary, BMI) %>%
@@ -804,7 +799,7 @@ gghist <- dane %>%
             fill = "Diabetes_binary", 
             color = "Diabetes_binary",
             add = "mean",
-            bins = 100,
+            bins = 87,
             rug = F,
             theme = theme_light())
 
@@ -816,14 +811,16 @@ gghist <- dane %>%
 ggpar(gghist,
       legend = c(0.8, 0.8),
       legend.title = "",
-      xlim = c(12,98),
-      palette = c('#007FFF', 'red')) +
+      xlim = c(12,98)) +
   scale_y_continuous(labels = label_number(scale = 1e-3,
                                            suffix = ' tys.'), 
                      breaks = seq(from = 0, to = 25000, 
                                   by = 2000)) +
   scale_x_continuous(breaks = seq(from = 12, to = 98, 
                                   by = 4)) +
+  scale_fill_manual(values = c('#007FFF', 'red'),
+                    labels = c('Zdrowy', 'Diabetyk'), 
+                    aesthetics = c('color', 'fill')) +
   labs(x = 'BMI', y = 'Liczba respondentów')
   
 ```
@@ -844,11 +841,9 @@ $$
 H_0: \sigma^2_1=\sigma^2_2 \\
 H_1: \sigma^2_1\neq\sigma^2_2
 \end{align}
-$$ gdzie $\sigma_1, \sigma_2$ oznaczają odpowiednio estymatory wariancji BMI dla populacji osób zdrowych oraz chorujących na cukrzycę.
+$$ 
 
-```{r Podmiana Diabetes_binary na początkowe wartości}
-levels(dane$Diabetes_binary) <- list("0" = "Zdrowy", "1" = "Diabetyk") 
-```
+gdzie $\sigma_1, \sigma_2$ oznaczają odpowiednio estymatory wariancji BMI dla populacji osób zdrowych oraz chorujących na cukrzycę.
 
 ```{r Test równości dwóch wariancji - BMI, echo=T}
 #| code-summary: 'Pokaż kod testu równości wariancji'
@@ -992,7 +987,9 @@ Jeżeli algorytm uwzględnia taką możliwość przeprowadzamy w trakcie uczenia
 ::: panel-tabset
 #### Drzewo decyzyjne
 
-Model drzewa decyzyjnego jest najprostszym spośród czterech wybranych. Przygotowanie danych wymaga jedynie jednego dodatkowego kroku jakim jest próbkowanie w dół (downsampling) na zbiorze treningowym. Jest to krok niezbędny dla zbioru, w którym klasy zmiennej zależnej są niezbalansowane.
+Model drzewa decyzyjnego jest najprostszym spośród czterech wybranych. Model drzewa decyzyjnego rozpoczyna się od węzła nazywanego 'korzeniem', w którym znajduje się cały zbiór danych. W każdym z węzłów algorytm drzewa wybiera cechę, która pozwala jak najlepiej podzielić zbiór zawierający się w danym węźle względem zmiennej zależnej.
+
+Przygotowanie danych wymaga jedynie jednego dodatkowego kroku jakim jest próbkowanie w dół (downsampling) na zbiorze treningowym. Jest to krok niezbędny dla zbioru, w którym klasy zmiennej zależnej są niezbalansowane.
 
 ```{r Przygotowanie zbioru treningowego do modelu drzewa decyzyjnego, echo=T}
 #| code-summary: 'Pokaż kod przygotowania zbioru treningowego'
@@ -1234,6 +1231,8 @@ cvms::plot_confusion_matrix(conf_mat,
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
 #### Regresja logistyczna
+
+Model regresji logistycznej to uogólniony model liniowy, który możemy stosować gdy zmienna zależna ma charakter dychotomiczny. Regresja logistyczna pozwala na obliczenie prawdopodobieństwa sukcesu, jednak jest ono wyrażone poprzez logarytm ilorazu szans (stosunek prawdopodobieństwa sukcesu do prawdopodobieństwa porażki).
 
 Aby poprawnie wykonać model regresji logistycznej musimy wykonać kilka dodatkowych kroków w celu odpowiedniego przygotowania zbiorów treningowego i testowego dla tego modelu.
 
