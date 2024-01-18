@@ -38,11 +38,11 @@ editor_options:
 
 Rodzaje cukrzycy:
 
--   Cukrzyca typu 1 -- charakteryzuje się niedoborem insuliny. Diabetyk wymaga leczenia insuliną.
+-   Cukrzyca typu 1 -- charakteryzuje się niedoborem insuliny. Osoba chora wymaga leczenia przez podawanie insuliny.
 
--   Cukrzyca typu 2 -- typowe dla niej jest zaburzone działanie i/lub wydzielanie insuliny. Osoba chora musi stosować odpowiednią dietę i przyjmować lekarstwa.
+-   Cukrzyca typu 2 -- typowe dla niej jest zaburzone działanie i/lub wydzielanie insuliny. Osoba chora musi stosować odpowiednią dietę i przyjmować leki.
 
--   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzenia dziecka podwyższony poziom glukozy wraca do normy.
+-   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzeniu dziecka podwyższony poziom insuliny wraca do normy.
 
 Cukrzyca to jedna z najczęściej występujących chorób przewlekłych w Stanach Zjednoczonych, dotykająca każdego roku miliony Amerykanów. Z danych Centers for Disease Control and Prevention (CDC) wynika, że w 2018 roku **34,2 miliona** Amerykanów choruje na cukrzycę, a **88 milionów** ma stan przedcukrzycowy. Dodatkowo, CDC szacuje, że 1 na 5 osób z cukrzycą i około 8 na 10 osób w stanie przedcukrzycowym nie zdaje sobie sprawy z ryzyka związanego z tą chorobą. Wysoki poziom cukru we krwi przez długi czas u osób z cukrzycą wiąże się z powikłaniami, takimi jak choroby serca, utrata wzroku, amputacja kończyn dolnych i choroba nerek. Chociaż nie ma lekarstwa na cukrzycę, strategie takie jak utrata wagi, zdrowa dieta, aktywność fizyczna i leczenie medyczne mogą złagodzić skutki tej choroby u wielu pacjentów. Wczesna diagnoza może prowadzić do zmiany stylu życia i bardziej skutecznego leczenia, dlatego modele predykcyjne ryzyka cukrzycy stanowią istotne narzędzie dla służb zdrowia publicznego.
 
