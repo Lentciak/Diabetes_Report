@@ -1454,6 +1454,53 @@ Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
 Zmienne wieku, nadciśnienia i BMI zgodnie z wynikami testów statystycznych okazały się być istotnymi predyktorami zachorowania na cukrzycę. To podejrzenie nie potwierdziło się jedynie dla zmiennej opisującej zarobki badanych.
 
+```{r Tabela najważniejszych predyktorów dla każdego modelu, echo=F}
+
+dec_tree_features <- drzewo$variable.importance %>%
+  as.data.frame()
+
+colnames(dec_tree_features) <- c('Istotność DT')
+
+dec_tree_features <- dec_tree_features %>%
+  head(n = 5) %>%
+  rownames_to_column('Zmienne DT')
+
+rf_features <- varImp(rf_bin, scale = F)$importance %>%
+  arrange(-Overall) %>%
+  head(n = 5)  %>%
+  mutate(`Istotność RF` = Overall, .keep = 'none') %>%
+  rownames_to_column('Zmienne RF')
+
+gbm_features <- summary(mod_GBM, plotit = F) %>% 
+  select(-var) %>% 
+  mutate(`Istotność GBM` = rel.inf, .keep = 'none') %>%
+  head(n = 5) %>%
+  rownames_to_column('Zmienne GBM')
+
+glm_reglog_features <- varImp(glm_model, scale = F)$importance %>%
+  arrange(-Overall) %>%
+  head(n = 5)  %>%
+  mutate(`Istotność GLM` = Overall, .keep = 'none') %>%
+  rownames_to_column(md('Zmienne GLM'))
+
+selected_features_tab <- cbind(dec_tree_features, 
+                               rf_features, 
+                               gbm_features, 
+                               glm_reglog_features) %>% 
+  gt() %>%
+  tab_spanner(label = 'Drzewo decyzyjne',
+              columns = c(1,2)) %>%
+  tab_spanner(label = 'Las losowy',
+              columns = c(3,4)) %>%
+  tab_spanner(label = 'GBM',
+              columns = c(5,6)) %>%
+  tab_spanner(label = 'Regresja logistyczna',
+              columns = c(7,8))
+
+selected_features_tab
+```
+
+
 Spośród czterech zbudowanych modeli klasyfikacji najskuteczniejszym okazał się model wzmacniania gradientowego (GBM) ze zbalansowaną dokładnością na poziomie 73.61%. Nie jest to jednak wysoki wynik względem pozostałych modeli - różnica w zbalansowanej dokładności między najlepszym i najgorszym modelem wyniosła 3.73 punktu procentowego.
 
 Dokładność modelu klasyfikacji w granicach 70-74% na pewno nie jest wynikiem idealnym, jednak zbliżone wyniki poszczególnych modeli mogą świadczyć o tym, że jest to granica osiągalnej dokładności dla danych zawartych zbiorze.

@@ -1,5 +1,5 @@
 ---
-title: "test_diabetes_xgboost"
+title: "test_diabetes_gbm"
 author: "Szymon Olędzki, Igor Nowiński"
 format: html
 theme: 
@@ -113,6 +113,10 @@ ths <- thresholder(mod_xgboost,
                    threshold = probs,
                    final = TRUE,
                    statistics = "all")
+```
+
+```{r}
+mod_GBM <- readRDS('Modele/gbm_model.rds')
 ```
 
 ```{r}
