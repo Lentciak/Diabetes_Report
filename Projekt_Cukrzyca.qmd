@@ -1,6 +1,12 @@
 ---
 title: "Problem klasyfikacji pacjentów pod względem zachorowania na cukrzycę"
-author: "Szymon Olędzki, Igor Nowiński"
+author: 
+  - name: 
+      given: Szymon
+      family: Olędzki
+  - name: 
+      given: Igor
+      family: Nowiński
 language: 'polski.yml'
 format:
   html:
@@ -20,6 +26,7 @@ format:
     toc-title: "Spis treści"
     embed-resources: true
     data-resources: true
+bibliography: bibliografia.bib
 execute:
   echo: false
   warning: false
@@ -44,7 +51,7 @@ Rodzaje cukrzycy:
 
 -   Cukrzyca ciążowa -- może wystąpić u kobiet w ciąży. Po urodzeniu dziecka podwyższony poziom insuliny wraca do normy.
 
-Cukrzyca to jedna z najczęściej występujących chorób przewlekłych w Stanach Zjednoczonych, dotykająca każdego roku miliony Amerykanów. Z danych Centers for Disease Control and Prevention (CDC) wynika, że w 2018 roku **34,2 miliona** Amerykanów choruje na cukrzycę, a **88 milionów** ma stan przedcukrzycowy. Dodatkowo, CDC szacuje, że 1 na 5 osób z cukrzycą i około 8 na 10 osób w stanie przedcukrzycowym nie zdaje sobie sprawy z ryzyka związanego z tą chorobą. Wysoki poziom cukru we krwi przez długi czas u osób z cukrzycą wiąże się z powikłaniami, takimi jak choroby serca, utrata wzroku, amputacja kończyn dolnych i choroba nerek. Chociaż nie ma lekarstwa na cukrzycę, strategie takie jak utrata wagi, zdrowa dieta, aktywność fizyczna i leczenie medyczne mogą złagodzić skutki tej choroby u wielu pacjentów. Wczesna diagnoza może prowadzić do zmiany stylu życia i bardziej skutecznego leczenia, dlatego modele predykcyjne ryzyka cukrzycy stanowią istotne narzędzie dla służb zdrowia publicznego.
+Cukrzyca to jedna z najczęściej występujących chorób przewlekłych w Stanach Zjednoczonych, dotykająca każdego roku miliony Amerykanów. Z danych Centers for Disease Control and Prevention (CDC) na rok 2021 [@Centers_for_Disease_Control_and_Prevention_2023] wynika, że **38,4 miliona** Amerykanów choruje na cukrzycę, a **97,6 miliona** dorosłych znajduje się w stanie przedcukrzycowym. Dodatkowo, CDC szacuje, że 1 na 5 osób z cukrzycą i około 8 na 10 osób w stanie przedcukrzycowym nie zdaje sobie sprawy z ryzyka związanego z tą chorobą. Wysoki poziom cukru we krwi przez długi czas u osób z cukrzycą wiąże się z powikłaniami, takimi jak choroby serca, utrata wzroku, amputacja kończyn dolnych i choroba nerek. Chociaż nie ma lekarstwa na cukrzycę, strategie takie jak utrata wagi, zdrowa dieta, aktywność fizyczna i leczenie medyczne mogą złagodzić skutki tej choroby u wielu pacjentów. Wczesna diagnoza może prowadzić do zmiany stylu życia i bardziej skutecznego leczenia, dlatego modele predykcyjne ryzyka cukrzycy stanowią istotne narzędzie dla służb zdrowia publicznego.
 
 ```{r Załadowanie potrzebnych bibliotek}
 library(tidyverse)
@@ -101,6 +108,32 @@ darksvglite <- function(file, width, height) {
     dev = "svg",
     bg = "transparent"
   )
+}
+```
+
+```{r Funkcja wykresu macierzy konfuzji}
+conf_mat_plot <- function(conf_matrix) {
+  
+  matrix <- as.data.frame(conf_matrix$Table) %>%
+  mutate(N = Freq, .keep = 'unused') %>%
+  mutate(Freq = N/sum(N), .by = Target)
+
+ggplot(matrix, aes(Target, Prediction, fill = Freq)) + 
+  geom_tile() +
+  geom_text(aes(Target, Prediction, label = paste0(round(100*Freq, 2), '%')), size = 10) +
+  geom_text(aes(Target, Prediction, label = N), size = 7, vjust = 4, fontface = 'italic') +
+  scale_fill_gradient(low = '#e0ebf6', high = '#3a6fb0') +
+  scale_y_discrete(name = 'Predykcja',
+                   labels = c('Diabetyk', 'Zdrowy'),
+                   limits = rev(levels(matrix$Prediction))) +
+  scale_x_discrete(position = 'top',
+                   name = 'Referencja',
+                   labels = c('Zdrowy', 'Diabetyk')) +
+  theme_minimal() +
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 11)) +
+  coord_fixed()
 }
 ```
 
@@ -186,7 +219,7 @@ zmienne_tylko_jakosciowe <- dane[-c(num_vars_cols, ord_vars_cols)]
 
 Behavioral Risk Factor Surveillance System (BRFSS) to coroczne badanie telefoniczne związane ze zdrowiem, prowadzone przez CDC. Każdego roku badanie to gromadzi odpowiedzi od ponad 400 000 Amerykanów dotyczące zachowań związanych z ryzykiem zdrowotnym, przewlekłych stanów zdrowia i korzystania z usług profilaktycznych.
 
-Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych, który jest bazą dla niniejszego projektu. Składa się z 229474 obserwacji opisanych przez 20 zmiennych, które zostały opisane poniżej.
+Na podstawie badania przeprowadzonego w 2015 roku powstał zbiór danych [@Teboul_2021], który jest bazą dla niniejszego projektu. Składa się z 229474 obserwacji opisanych przez 20 zmiennych, które zostały opisane poniżej.
 
 ::: panel-tabset
 ### Opis zmiennych
@@ -1044,14 +1077,7 @@ conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
 
 bal_acc <- conf_mat$`Balanced Accuracy`
 
-cvms::plot_confusion_matrix(conf_mat,
-                            digits = 2,
-                            counts_on_top = T,
-                            add_normalized = F,
-                            rotate_y_text = F,
-                            add_row_percentages = F,
-                            font_counts = list(size = 10),
-                            font_col_percentages = list(size = 8))
+conf_mat_plot(conf_mat)
 ```
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
@@ -1141,14 +1167,7 @@ conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
 
 bal_acc <- conf_mat$`Balanced Accuracy`
 
-cvms::plot_confusion_matrix(conf_mat,
-                            digits = 2,
-                            counts_on_top = T,
-                            add_normalized = F,
-                            rotate_y_text = F,
-                            add_row_percentages = F,
-                            font_counts = list(size = 9),
-                            font_col_percentages = list(size = 7))
+conf_mat_plot(conf_mat)
 ```
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
@@ -1240,14 +1259,7 @@ conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
 
 bal_acc <- conf_mat$`Balanced Accuracy`
 
-cvms::plot_confusion_matrix(conf_mat,
-                            digits = 2,
-                            counts_on_top = T,
-                            add_normalized = F,
-                            rotate_y_text = F,
-                            add_row_percentages = F,
-                            font_counts = list(size = 9),
-                            font_col_percentages = list(size = 7))
+conf_mat_plot(conf_mat)
 ```
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
@@ -1394,7 +1406,7 @@ outliers_BMI <- dane %>%
   nrow()
 ```
 
-Zmienna BMI ma `r outliers_BMI` wartości odstających, co przekłada się na `r round(outliers_BMI/nrow(dane.train), 2)`% jej wartości w zbiorze testowym. Jest to bardzo niewielka ilość, dlatego pominiemy ich istotność przy treningu modelu. Kolejnym powodem tej decyzji jest konsensus badaczy pod względem nieusuwania obserwacji odstających ze zbiorów danych o charakterze medycznym tak długo, jak zawarte w nich dane mają rzeczywisty sens, a nie są błędnymi wartościami.
+Zmienna BMI ma `r outliers_BMI` wartości odstających, co przekłada się na `r round((outliers_BMI/nrow(dane.train))*100, 2)`% jej wartości w zbiorze testowym. Jest to bardzo niewielka ilość, dlatego pominiemy ich istotność przy treningu modelu. Kolejnym powodem tej decyzji jest konsensus badaczy pod względem nieusuwania obserwacji odstających ze zbiorów danych o charakterze medycznym tak długo, jak zawarte w nich dane mają rzeczywisty sens, a nie są błędnymi wartościami.
 
 #### Wyznaczenie progu odcięcia
 
@@ -1437,14 +1449,7 @@ conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
 
 bal_acc <- conf_mat$`Balanced Accuracy`
 
-cvms::plot_confusion_matrix(conf_mat,
-                            digits = 2,
-                            counts_on_top = T,
-                            add_normalized = F,
-                            rotate_y_text = F,
-                            add_row_percentages = F,
-                            font_counts = list(size = 9),
-                            font_col_percentages = list(size = 7))
+conf_mat_plot(conf_mat)
 ```
 
 Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
@@ -1452,9 +1457,11 @@ Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
 ## Wnioski
 
-Zmienne wieku, nadciśnienia i BMI zgodnie z wynikami testów statystycznych okazały się być istotnymi predyktorami zachorowania na cukrzycę. To podejrzenie nie potwierdziło się jedynie dla zmiennej opisującej zarobki badanych.
+Zmienne mówiące o wieku, nadciśnieniu i BMI respondentów zgodnie z wynikami testów statystycznych okazały się być istotnymi predyktorami zachorowania na cukrzycę. To podejrzenie nie potwierdziło się jedynie dla zmiennej opisującej zarobki badanych.
 
 ```{r Tabela najważniejszych predyktorów dla każdego modelu, echo=F}
+#| label: tbl-varimp
+#| tbl-cap: Tabela istotności predyktorów dla poszczególnych modeli klasyfikacyjnych
 
 dec_tree_features <- drzewo$variable.importance %>%
   as.data.frame()
@@ -1462,24 +1469,24 @@ dec_tree_features <- drzewo$variable.importance %>%
 colnames(dec_tree_features) <- c('Istotność DT')
 
 dec_tree_features <- dec_tree_features %>%
-  head(n = 5) %>%
+  head(n = 10) %>%
   rownames_to_column('Zmienne DT')
 
 rf_features <- varImp(rf_bin, scale = F)$importance %>%
   arrange(-Overall) %>%
-  head(n = 5)  %>%
+  head(n = 10)  %>%
   mutate(`Istotność RF` = Overall, .keep = 'none') %>%
   rownames_to_column('Zmienne RF')
 
 gbm_features <- summary(mod_GBM, plotit = F) %>% 
   select(-var) %>% 
   mutate(`Istotność GBM` = rel.inf, .keep = 'none') %>%
-  head(n = 5) %>%
+  head(n = 10) %>%
   rownames_to_column('Zmienne GBM')
 
 glm_reglog_features <- varImp(glm_model, scale = F)$importance %>%
   arrange(-Overall) %>%
-  head(n = 5)  %>%
+  head(n = 10)  %>%
   mutate(`Istotność GLM` = Overall, .keep = 'none') %>%
   rownames_to_column(md('Zmienne GLM'))
 
@@ -1500,13 +1507,6 @@ selected_features_tab <- cbind(dec_tree_features,
 selected_features_tab
 ```
 
-
 Spośród czterech zbudowanych modeli klasyfikacji najskuteczniejszym okazał się model wzmacniania gradientowego (GBM) ze zbalansowaną dokładnością na poziomie 73.61%. Nie jest to jednak wysoki wynik względem pozostałych modeli - różnica w zbalansowanej dokładności między najlepszym i najgorszym modelem wyniosła 3.73 punktu procentowego.
 
 Dokładność modelu klasyfikacji w granicach 70-74% na pewno nie jest wynikiem idealnym, jednak zbliżone wyniki poszczególnych modeli mogą świadczyć o tym, że jest to granica osiągalnej dokładności dla danych zawartych zbiorze.
-
-## Źródła
-
-Dane pochodzą ze zbioru:
-
-<https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/data?select=diabetes_binary_health_indicators_BRFSS2015.csv>

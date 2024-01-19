@@ -82,7 +82,28 @@ pred <- ifelse(pred[,1]>=0.49, 'no', 'yes')
 ```
 
 ```{r}
-confusionMatrix(data = as.factor(pred), reference = dane.test$Diabetes_binary, positive = 'yes')
+conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
+                                    predictions = as.factor(pred),
+                                    positive = 'yes')
+
+macierz <- as.data.frame(conf_mat$Table) %>%
+  mutate(N = Freq, .keep = 'unused') %>%
+  mutate(Freq = N/sum(N), .by = Target)
+
+ggplot(macierz, aes(Target, Prediction, fill = Freq)) + 
+  geom_tile() +
+  geom_text(aes(Target, Prediction, label = paste0(round(100*Freq, 2), '%')), size = 10) +
+  geom_text(aes(Target, Prediction, label = N), size = 7, vjust = 4, fontface = 'italic') +
+  scale_fill_gradient(low = '#e0ebf6', high = '#3a6fb0') +
+  scale_y_discrete(name = 'Predykcja',
+                   labels = c('Diabetyk', 'Zdrowy'),
+                   limits = rev(levels(macierz$Prediction))) +
+  scale_x_discrete(position = 'top',
+                   name = 'Referencja',
+                   labels = c('Zdrowy', 'Diabetyk')) +
+  theme_minimal() +
+  theme(legend.position = 'none') +
+  coord_fixed()
 ```
 
 ```{r}

@@ -129,13 +129,24 @@ conf_mat <- cvms::confusion_matrix(targets = dane.test$Diabetes_binary,
                                     predictions = as.factor(predykcja),
                                     positive = 'yes')
 
-cvms::plot_confusion_matrix(conf_mat,
-                            counts_on_top = T,
-                            add_normalized = F,
-                            rotate_y_text = F,
-                            add_row_percentages = F,
-                            font_counts = list(size = 9),
-                            font_col_percentages = list(size = 7))
+macierz <- as.data.frame(conf_mat$Table) %>%
+  mutate(N = Freq, .keep = 'unused') %>%
+  mutate(Freq = N/sum(N), .by = Target)
+
+ggplot(macierz, aes(Target, Prediction, fill = Freq)) + 
+  geom_tile() +
+  geom_text(aes(Target, Prediction, label = paste0(round(100*Freq, 2), '%')), size = 10) +
+  geom_text(aes(Target, Prediction, label = N), size = 7, vjust = 4, fontface = 'italic') +
+  scale_fill_gradient(low = '#e0ebf6', high = '#3a6fb0') +
+  scale_y_discrete(name = 'Predykcja',
+                   labels = c('Diabetyk', 'Zdrowy'),
+                   limits = rev(levels(macierz$Prediction))) +
+  scale_x_discrete(position = 'top',
+                   name = 'Referencja',
+                   labels = c('Zdrowy', 'Diabetyk')) +
+  theme_minimal() +
+  theme(legend.position = 'none') +
+  coord_fixed()
 ```
 
 ```{r}
