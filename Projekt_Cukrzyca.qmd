@@ -1459,7 +1459,7 @@ Zbalansowana dokładność modelu wynosi `r paste0(round(bal_acc*100,2),'%')`
 
 Zmienne mówiące o wieku, nadciśnieniu i BMI respondentów zgodnie z wynikami testów statystycznych okazały się być istotnymi predyktorami zachorowania na cukrzycę. To podejrzenie nie potwierdziło się jedynie dla zmiennej opisującej zarobki badanych.
 
-```{r Tabela najważniejszych predyktorów dla każdego modelu, echo=F}
+```{r Tabela 5 najważniejszych predyktorów dla każdego modelu, echo=F}
 #| label: tbl-varimp
 #| tbl-cap: Tabela istotności predyktorów dla poszczególnych modeli klasyfikacyjnych
 
@@ -1469,24 +1469,24 @@ dec_tree_features <- drzewo$variable.importance %>%
 colnames(dec_tree_features) <- c('Istotność DT')
 
 dec_tree_features <- dec_tree_features %>%
-  head(n = 10) %>%
+  head(n = 5) %>%
   rownames_to_column('Zmienne DT')
 
 rf_features <- varImp(rf_bin, scale = F)$importance %>%
   arrange(-Overall) %>%
-  head(n = 10)  %>%
+  head(n = 5)  %>%
   mutate(`Istotność RF` = Overall, .keep = 'none') %>%
   rownames_to_column('Zmienne RF')
 
 gbm_features <- summary(mod_GBM, plotit = F) %>% 
   select(-var) %>% 
   mutate(`Istotność GBM` = rel.inf, .keep = 'none') %>%
-  head(n = 10) %>%
+  head(n = 5) %>%
   rownames_to_column('Zmienne GBM')
 
 glm_reglog_features <- varImp(glm_model, scale = F)$importance %>%
   arrange(-Overall) %>%
-  head(n = 10)  %>%
+  head(n = 5)  %>%
   mutate(`Istotność GLM` = Overall, .keep = 'none') %>%
   rownames_to_column(md('Zmienne GLM'))
 
