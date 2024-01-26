@@ -8,13 +8,13 @@ We would like to invite you to read our report on the classification of patients
 
 The following items are available in the repository:
 
--- `Modele_script` - files prepared to reproduce the individual classification models (due to file size limitations, we are unable to make the finished models available here)
+- `Modele_script` - files prepared to reproduce the individual classification models (due to file size limitations, we are unable to make the finished models available here)
 
--- `Diabetes_Report.html` - a file containing the report ready to be downloaded and read
+- `Diabetes_Report.html` - a file containing the report ready to be downloaded and read
 
--- `Diabetes_Report.qmd` - a file containing the source code of the report in the Quarto file
+- `Diabetes_Report.qmd` - a file containing the source code of the report in the Quarto file
 
--- `diabetes_binary.csv` - a dataset, the basis for the creation of this project
+- `diabetes_binary.csv` - a dataset, the basis for the creation of this project
 
 ### Team
 
